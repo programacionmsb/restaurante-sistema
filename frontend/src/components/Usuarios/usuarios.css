@@ -1,0 +1,96 @@
+/* Gestión de Usuarios */
+.usuarios-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.usuarios-header {
+  background: white;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.usuarios-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.usuarios-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabla de usuarios */
+.usuario-row {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s;
+}
+
+.usuario-row:hover {
+  background: #f9fafb;
+}
+
+.usuario-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: white;
+  margin-right: 1rem;
+}
+
+.usuario-info {
+  flex: 1;
+}
+
+.usuario-nombre {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.usuario-email {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.usuario-rol-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.usuario-estado {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.usuario-estado.activo {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.usuario-estado.inactivo {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.usuario-ultimo-acceso {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}

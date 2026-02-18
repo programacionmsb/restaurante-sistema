@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Sistema de Restaurante" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  
+  <!-- Fix crítico para textos invisibles -->
+  <style>
+    /* Forzar color blanco en TODOS los gradientes */
+    * [class*="bg-gradient"] {
+      color: white !important;
+    }
+    
+    /* Títulos de secciones */
+    h4[class*="font-bold"] {
+      color: #1f2937 !important;
+    }
+    
+    /* Botones con gradiente naranja */
+    button.flex-1.px-6 {
+      color: white !important;
+    }
+    
+    /* Sobrescribir cualquier herencia de color */
+    .bg-gradient-to-r * {
+      color: inherit;
+    }
+    
+    .bg-gradient-to-r {
+      color: white !important;
+    }
+    
+    /* Asegurar visibilidad en botones específicos */
+    button[class*="from-orange-500"],
+    button[class*="from-green-500"],
+    button[class*="from-blue-500"],
+    button[class*="from-red-500"],
+    button[class*="from-purple-500"] {
+      color: white !important;
+    }
+  </style>
+  
+  <title>RestaurantePRO</title>
+</head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

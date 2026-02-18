@@ -1,0 +1,368 @@
+/* Gestión de Pedidos */
+.pedidos-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.pedidos-header {
+  background: white;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pedidos-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.pedidos-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs de filtros */
+.pedidos-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.pedido-tab {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.pedido-tab:hover {
+  color: #f59e0b;
+}
+
+.pedido-tab.active {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+}
+
+/* Grid de pedidos */
+.pedidos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card de pedido */
+.pedido-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.pedido-card:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.pedido-card.pendiente {
+  border-left: 4px solid #ef4444;
+}
+
+.pedido-card.en_preparacion {
+  border-left: 4px solid #f59e0b;
+}
+
+.pedido-card.completado {
+  border-left: 4px solid #10b981;
+}
+
+.pedido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pedido-mesa {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.pedido-hora {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.pedido-cliente {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.pedido-items {
+  margin: 1rem 0;
+}
+
+.pedido-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.pedido-item-nombre {
+  color: #374151;
+}
+
+.pedido-item-cantidad {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.pedido-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #1f2937;
+}
+
+/* Estados */
+.pedido-estados {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.estado-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.estado-badge.pendiente {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.estado-badge.en_preparacion {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.estado-badge.completado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.estado-badge.pago-pendiente {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.estado-badge.pago-pagado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Botones de acción */
+.pedido-acciones {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-accion {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-accion:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-cocina {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.btn-completar {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.btn-cobrar {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Modal de crear pedido */
+.crear-pedido-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.platos-section {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.platos-categoria {
+  margin-bottom: 1.5rem;
+}
+
+.platos-categoria h4 {
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plato-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s;
+}
+
+.plato-item:hover {
+  background: #f3f4f6;
+}
+
+.plato-info {
+  flex: 1;
+}
+
+.plato-nombre {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.875rem;
+}
+
+.plato-precio {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.plato-cantidad {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-cantidad {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: #e5e7eb;
+  color: #374151;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.btn-cantidad:hover {
+  background: #d1d5db;
+}
+
+.cantidad-display {
+  width: 2rem;
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Resumen del pedido */
+.resumen-pedido {
+  border-left: 2px solid #e5e7eb;
+  padding-left: 2rem;
+}
+
+.resumen-items {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.resumen-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.resumen-item-info {
+  flex: 1;
+}
+
+.resumen-item-nombre {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.875rem;
+}
+
+.resumen-item-detalle {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.resumen-total {
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+.resumen-total-linea {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.resumen-total-final {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 2px solid #e5e7eb;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #1f2937;
+}

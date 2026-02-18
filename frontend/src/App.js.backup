@@ -1,0 +1,1095 @@
+import React, { useState } from 'react';
+import { 
+  Users, UtensilsCrossed, ChefHat, Menu, Plus, Edit2, Trash2, 
+  Check, Clock, X, Save, Search, Eye, DollarSign, CreditCard, Banknote
+} from 'lucide-react';
+import { useRestauranteAPI } from './useRestauranteAPI';
+
+export default function RestaurantManagementSystem() {
+  const [currentView, setCurrentView] = useState('pedidos');
+  
+  const {
+    clientes, entradas, platos, bebidas, postres, menusDia, pedidos,
+    crearCliente, actualizarCliente, eliminarCliente,
+    crearPlato, actualizarPlato, eliminarPlato,
+    crearPedido, actualizarEstadoPedido, registrarPagoPedido,
+    loading,
+    setClientes, setEntradas, setPlatos, setBebidas, setPostres, setMenusDia, setPedidos
+  } = useRestauranteAPI();
+
+  const views = [
+    { id: 'clientes', label: 'Clientes', icon: Users },
+    { id: 'pedidos', label: 'Pedidos', icon: UtensilsCrossed },
+    { id: 'cocina', label: 'Cocina', icon: ChefHat },
+    { id: 'caja', label: 'Caja', icon: DollarSign },
+    { id: 'menu-dia', label: 'Menú del Día', icon: Menu },
+    { id: 'gestion-platos', label: 'Gestión Platos', icon: Eye }
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 flex items-center justify-center">
+        <div className="text-center">
+          <UtensilsCrossed className="w-16 h-16 text-orange-500 mx-auto mb-4 animate-pulse" />
+          <div className="text-2xl font-bold text-gray-800">Cargando sistema...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
+      <header className="bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-2xl">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center gap-4">
+            <UtensilsCrossed className="w-10 h-10" strokeWidth={2.5} />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">RestaurantePRO</h1>
+              <p className="text-orange-100 text-sm">Sistema de Gestión Integral</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <nav className="bg-white border-b-4 border-orange-200 shadow-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex gap-2 overflow-x-auto py-3">
+            {views.map(view => {
+              const Icon = view.icon;
+              return (
+                <button
+                  key={view.id}
+                  onClick={() => setCurrentView(view.id)}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
+                    currentView === view.id
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {view.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {currentView === 'clientes' && (
+          <ClientesView 
+            clientes={clientes}
+            setClientes={setClientes}
+          />
+        )}
+        {currentView === 'pedidos' && (
+          <PedidosView 
+            pedidos={pedidos} 
+            setPedidos={setPedidos}
+            clientes={clientes}
+            entradas={entradas}
+            platos={platos}
+            bebidas={bebidas}
+            postres={postres}
+          />
+        )}
+        {currentView === 'cocina' && (
+          <CocinaView pedidos={pedidos} setPedidos={setPedidos} />
+        )}
+        {currentView === 'caja' && (
+          <CajaView pedidos={pedidos} setPedidos={setPedidos} />
+        )}
+        {currentView === 'gestion-platos' && (
+          <GestionPlatosView 
+            entradas={entradas}
+            setEntradas={setEntradas}
+            platos={platos}
+            setPlatos={setPlatos}
+            bebidas={bebidas}
+            setBebidas={setBebidas}
+            postres={postres}
+            setPostres={setPostres}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+
+// ============================================================================
+// VISTA: CLIENTES
+// ============================================================================
+function ClientesView({ clientes, setClientes }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [formData, setFormData] = useState({ nombre: '', telefono: '', email: '' });
+
+  const openModal = (cliente = null) => {
+    if (cliente) {
+      setEditingCliente(cliente);
+      setFormData(cliente);
+    } else {
+      setEditingCliente(null);
+      setFormData({ nombre: '', telefono: '', email: '' });
+    }
+    setModalOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!formData.nombre || !formData.telefono) return;
+    
+    if (editingCliente) {
+      setClientes(clientes.map(c => c._id === editingCliente._id ? { ...formData, _id: c._id } : c));
+    } else {
+      setClientes([...clientes, { ...formData, _id: Date.now() }]);
+    }
+    setModalOpen(false);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('¿Eliminar este cliente?')) {
+      setClientes(clientes.filter(c => c._id !== id));
+    }
+  };
+
+  const filteredClientes = clientes.filter(c => 
+    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.telefono.includes(searchTerm)
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-800">Gestión de Clientes</h2>
+        <button
+          onClick={() => openModal()}
+          className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-xl transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Nuevo Cliente
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o teléfono..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-gray-200">
+                <th className="text-left py-4 px-4 font-bold text-gray-700">Nombre</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-700">Teléfono</th>
+                <th className="text-left py-4 px-4 font-bold text-gray-700">Email</th>
+                <th className="text-right py-4 px-4 font-bold text-gray-700">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClientes.map((cliente) => (
+                <tr key={cliente._id} className="border-b border-gray-100 hover:bg-orange-50 transition-colors">
+                  <td className="py-4 px-4 font-medium">{cliente.nombre}</td>
+                  <td className="py-4 px-4 text-gray-600">{cliente.telefono}</td>
+                  <td className="py-4 px-4 text-gray-600">{cliente.email}</td>
+                  <td className="py-4 px-4">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => openModal(cliente)}
+                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cliente._id)}
+                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h3 className="text-2xl font-bold mb-6">
+              {editingCliente ? 'Editar Cliente' : 'Nuevo Cliente'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Nombre</label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                  placeholder="Nombre completo"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Teléfono</label>
+                <input
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                  placeholder="987654321"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                  placeholder="cliente@email.com"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:shadow-xl transition-all"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ============================================================================
+// VISTA: PEDIDOS
+// ============================================================================
+function PedidosView({ pedidos, setPedidos, clientes, entradas, platos, bebidas, postres }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    cliente: '',
+    mesa: '',
+    items: []
+  });
+
+  const agregarItem = (tipo, item) => {
+    const existe = formData.items.find(i => i.nombre === item.nombre);
+    if (existe) {
+      setFormData({
+        ...formData,
+        items: formData.items.map(i => 
+          i.nombre === item.nombre ? { ...i, cantidad: i.cantidad + 1 } : i
+        )
+      });
+    } else {
+      setFormData({
+        ...formData,
+        items: [...formData.items, { tipo, nombre: item.nombre, cantidad: 1, precio: item.precio }]
+      });
+    }
+  };
+
+  const calcularTotal = () => {
+    return formData.items.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+  };
+
+  const handleCrearPedido = () => {
+    if (!formData.cliente || !formData.mesa || formData.items.length === 0) {
+      alert('Complete todos los campos');
+      return;
+    }
+
+    const nuevoPedido = {
+      _id: Date.now(),
+      cliente: formData.cliente,
+      mesa: formData.mesa,
+      items: formData.items,
+      estado: 'pendiente',
+      estadoPago: 'pendiente',
+      hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
+      total: calcularTotal()
+    };
+
+    setPedidos([...pedidos, nuevoPedido]);
+    setFormData({ cliente: '', mesa: '', items: [] });
+    setModalOpen(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-800">Gestión de Pedidos</h2>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-xl transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Nuevo Pedido
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {pedidos.filter(p => p.estado !== 'completado').map((pedido) => (
+          <div key={pedido._id} className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-orange-500">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="font-bold text-lg text-gray-800">{pedido.cliente}</h3>
+                <p className="text-sm text-gray-500">Mesa {pedido.mesa} • {pedido.hora}</p>
+              </div>
+              <div className="flex flex-col gap-2 items-end">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  pedido.estado === 'pendiente' 
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {pedido.estado === 'pendiente' ? 'Pendiente' : 'En preparación'}
+                </span>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  pedido.estadoPago === 'pagado'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {pedido.estadoPago === 'pagado' ? '✓ Pagado' : '✗ Por cobrar'}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2 mb-4">
+              {pedido.items.map((item, idx) => (
+                <div key={idx} className="flex justify-between text-sm">
+                  <span className="text-gray-700">
+                    {item.cantidad}x {item.nombre}
+                    <span className="text-xs text-gray-500 ml-1">({item.tipo})</span>
+                  </span>
+                  <span className="font-semibold text-gray-800">S/ {(item.precio * item.cantidad).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-3 flex justify-between items-center">
+              <span className="font-bold text-lg text-gray-800">Total: S/ {pedido.total.toFixed(2)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full p-8 my-8">
+            <h3 className="text-2xl font-bold mb-6">Nuevo Pedido</h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Cliente</label>
+                <select
+                  value={formData.cliente}
+                  onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                >
+                  <option value="">Seleccionar cliente</option>
+                  {clientes.map(c => (
+                    <option key={c._id} value={c.nombre}>{c.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Mesa</label>
+                <input
+                  type="text"
+                  value={formData.mesa}
+                  onChange={(e) => setFormData({ ...formData, mesa: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                  placeholder="Número de mesa"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div>
+                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                  Entradas
+                </h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {entradas.filter(e => e.disponible).map(entrada => (
+                    <button
+                      key={entrada._id}
+                      onClick={() => agregarItem('entrada', entrada)}
+                      className="w-full text-left px-3 py-2 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{entrada.nombre}</span>
+                        <span className="text-green-700 font-bold text-xs">S/ {entrada.precio.toFixed(2)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                  Platos
+                </h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {platos.filter(p => p.disponible).map(plato => (
+                    <button
+                      key={plato._id}
+                      onClick={() => agregarItem('plato', plato)}
+                      className="w-full text-left px-3 py-2 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors text-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{plato.nombre}</span>
+                        <span className="text-orange-700 font-bold text-xs">S/ {plato.precio.toFixed(2)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                  Bebidas
+                </h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {bebidas.filter(b => b.disponible).map(bebida => (
+                    <button
+                      key={bebida._id}
+                      onClick={() => agregarItem('bebida', bebida)}
+                      className="w-full text-left px-3 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors text-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{bebida.nombre}</span>
+                        <span className="text-blue-700 font-bold text-xs">S/ {bebida.precio.toFixed(2)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-purple-500 rounded-full"></span>
+                  Postres
+                </h4>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {postres.filter(p => p.disponible).map(postre => (
+                    <button
+                      key={postre._id}
+                      onClick={() => agregarItem('postre', postre)}
+                      className="w-full text-left px-3 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-sm"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{postre.nombre}</span>
+                        <span className="text-purple-700 font-bold text-xs">S/ {postre.precio.toFixed(2)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {formData.items.length > 0 && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                <h4 className="font-bold mb-3">Resumen del Pedido</h4>
+                <div className="space-y-2">
+                  {formData.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span>{item.cantidad}x {item.nombre} <span className="text-xs text-gray-500">({item.tipo})</span></span>
+                      <span className="font-semibold">S/ {(item.precio * item.cantidad).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t mt-3 pt-3 flex justify-between items-center">
+                  <span className="font-bold text-lg">Total:</span>
+                  <span className="font-bold text-xl text-orange-600">S/ {calcularTotal().toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCrearPedido}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:shadow-xl transition-all"
+              >
+                Crear Pedido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ============================================================================
+// VISTA: COCINA
+// ============================================================================
+function CocinaView({ pedidos, setPedidos }) {
+  const pedidosPendientes = pedidos.filter(p => p.estado !== 'completado');
+
+  const marcarCompletado = (id) => {
+    setPedidos(pedidos.map(p => 
+      p._id === id ? { ...p, estado: 'completado' } : p
+    ));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <ChefHat className="w-10 h-10 text-orange-600" />
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">Vista de Cocina</h2>
+          <p className="text-gray-600">Pedidos en espera: {pedidosPendientes.length}</p>
+        </div>
+      </div>
+
+      {pedidosPendientes.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <Check className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Todo al día!</h3>
+          <p className="text-gray-600">No hay pedidos pendientes en este momento</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {pedidosPendientes.map((pedido) => (
+            <div key={pedido._id} className="bg-white rounded-2xl shadow-xl p-6 border-t-4 border-orange-500">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="font-bold text-2xl text-gray-800 mb-1">Mesa {pedido.mesa}</h3>
+                  <p className="text-sm text-gray-500">{pedido.cliente} • {pedido.hora}</p>
+                </div>
+                <div className="flex items-center gap-2 bg-yellow-100 px-4 py-2 rounded-full">
+                  <Clock className="w-5 h-5 text-yellow-700" />
+                  <span className="font-semibold text-yellow-700">Pendiente</span>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                {pedido.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3 bg-orange-50 p-4 rounded-xl">
+                    <div className="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                      {item.cantidad}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-800">{item.nombre}</p>
+                      <p className="text-sm text-gray-500 capitalize">{item.tipo}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => marcarCompletado(pedido._id)}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all"
+              >
+                <Check className="w-6 h-6" />
+                Marcar como Completado
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// VISTA: CAJA
+// ============================================================================
+function CajaView({ pedidos, setPedidos }) {
+  const [filtro, setFiltro] = useState('todos');
+  const [metodoPago, setMetodoPago] = useState('efectivo');
+  const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
+
+  const pedidosCompletados = pedidos.filter(p => p.estado === 'completado');
+  const pedidosFiltrados = pedidosCompletados.filter(p => {
+    if (filtro === 'pendientes') return p.estadoPago === 'pendiente';
+    if (filtro === 'pagados') return p.estadoPago === 'pagado';
+    return true;
+  });
+
+  const totalPendiente = pedidosCompletados
+    .filter(p => p.estadoPago === 'pendiente')
+    .reduce((sum, p) => sum + p.total, 0);
+
+  const totalCobrado = pedidosCompletados
+    .filter(p => p.estadoPago === 'pagado')
+    .reduce((sum, p) => sum + p.total, 0);
+
+  const registrarPago = (pedidoId) => {
+    setPedidos(pedidos.map(p => 
+      p._id === pedidoId ? { ...p, estadoPago: 'pagado', metodoPago } : p
+    ));
+    setPedidoSeleccionado(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <DollarSign className="w-10 h-10 text-green-600" />
+          <div>
+            <h2 className="text-3xl font-bold text-gray-800">Caja</h2>
+            <p className="text-gray-600">Gestión de cobros y pagos</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold opacity-90">Total Cobrado Hoy</h3>
+            <Check className="w-8 h-8 opacity-80" />
+          </div>
+          <p className="text-4xl font-bold">S/ {totalCobrado.toFixed(2)}</p>
+          <p className="text-sm opacity-80 mt-1">Pedidos completados y pagados</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold opacity-90">Pendiente de Cobro</h3>
+            <Clock className="w-8 h-8 opacity-80" />
+          </div>
+          <p className="text-4xl font-bold">S/ {totalPendiente.toFixed(2)}</p>
+          <p className="text-sm opacity-80 mt-1">Pedidos completados sin pagar</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold opacity-90">Total del Día</h3>
+            <Banknote className="w-8 h-8 opacity-80" />
+          </div>
+          <p className="text-4xl font-bold">S/ {(totalCobrado + totalPendiente).toFixed(2)}</p>
+          <p className="text-sm opacity-80 mt-1">Cobrado + Pendiente</p>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          onClick={() => setFiltro('todos')}
+          className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+            filtro === 'todos'
+              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Todos ({pedidosCompletados.length})
+        </button>
+        <button
+          onClick={() => setFiltro('pendientes')}
+          className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+            filtro === 'pendientes'
+              ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Por Cobrar ({pedidosCompletados.filter(p => p.estadoPago === 'pendiente').length})
+        </button>
+        <button
+          onClick={() => setFiltro('pagados')}
+          className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+            filtro === 'pagados'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          Pagados ({pedidosCompletados.filter(p => p.estadoPago === 'pagado').length})
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <tr>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Pedido</th>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Cliente / Mesa</th>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Hora</th>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Total</th>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Estado</th>
+              <th className="text-right py-4 px-6 font-bold text-gray-700">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pedidosFiltrados.map((pedido) => (
+              <tr key={pedido._id} className="border-b border-gray-100 hover:bg-orange-50 transition-colors">
+                <td className="py-4 px-6">
+                  <div className="font-medium text-gray-800">#{pedido._id.toString().slice(-4)}</div>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="font-medium text-gray-800">{pedido.cliente}</div>
+                  <div className="text-sm text-gray-500">Mesa {pedido.mesa}</div>
+                </td>
+                <td className="py-4 px-6 text-gray-700">{pedido.hora}</td>
+                <td className="py-4 px-6">
+                  <span className="font-bold text-lg text-gray-800">S/ {pedido.total.toFixed(2)}</span>
+                </td>
+                <td className="py-4 px-6">
+                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                    pedido.estadoPago === 'pagado'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {pedido.estadoPago === 'pagado' ? '✓ Pagado' : '✗ Pendiente'}
+                  </span>
+                  {pedido.metodoPago && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {pedido.metodoPago === 'efectivo' ? '💵 Efectivo' : 
+                       pedido.metodoPago === 'tarjeta' ? '💳 Tarjeta' : '📱 Transferencia'}
+                    </div>
+                  )}
+                </td>
+                <td className="py-4 px-6">
+                  <div className="flex justify-end gap-2">
+                    {pedido.estadoPago === 'pendiente' && (
+                      <button
+                        onClick={() => setPedidoSeleccionado(pedido)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        Cobrar
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {pedidosFiltrados.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No hay pedidos en esta categoría
+          </div>
+        )}
+      </div>
+
+      {pedidoSeleccionado && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h3 className="text-2xl font-bold mb-6">Registrar Pago</h3>
+            
+            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <div className="text-sm text-gray-600 mb-1">Cliente: {pedidoSeleccionado.cliente}</div>
+              <div className="text-sm text-gray-600 mb-3">Mesa: {pedidoSeleccionado.mesa}</div>
+              
+              <div className="border-t pt-3 mb-3">
+                <div className="text-sm font-semibold text-gray-700 mb-2">Items del pedido:</div>
+                {pedidoSeleccionado.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>{item.cantidad}x {item.nombre}</span>
+                    <span>S/ {(item.precio * item.cantidad).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t pt-3 flex justify-between items-center">
+                <span className="font-bold text-lg">Total a cobrar:</span>
+                <span className="font-bold text-2xl text-green-600">S/ {pedidoSeleccionado.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-3 text-gray-700">Método de Pago</label>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  onClick={() => setMetodoPago('efectivo')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    metodoPago === 'efectivo'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-1">💵</div>
+                  <div className="text-xs font-semibold">Efectivo</div>
+                </button>
+                <button
+                  onClick={() => setMetodoPago('tarjeta')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    metodoPago === 'tarjeta'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-1">💳</div>
+                  <div className="text-xs font-semibold">Tarjeta</div>
+                </button>
+                <button
+                  onClick={() => setMetodoPago('transferencia')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    metodoPago === 'transferencia'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-1">📱</div>
+                  <div className="text-xs font-semibold">Transfer.</div>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPedidoSeleccionado(null)}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => registrarPago(pedidoSeleccionado._id)}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all"
+              >
+                <Check className="w-5 h-5" />
+                Confirmar Pago
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ============================================================================
+// VISTA: GESTIÓN DE PLATOS
+// ============================================================================
+function GestionPlatosView({ entradas, setEntradas, platos, setPlatos, bebidas, setBebidas, postres, setPostres }) {
+  const [tipoActivo, setTipoActivo] = useState('entradas');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [formData, setFormData] = useState({ nombre: '', precio: '', disponible: true });
+
+  const categorias = {
+    entradas: { items: entradas, setItems: setEntradas, label: 'Entrada', color: 'green', tipo: 'entrada' },
+    platos: { items: platos, setItems: setPlatos, label: 'Plato de Fondo', color: 'orange', tipo: 'plato' },
+    bebidas: { items: bebidas, setItems: setBebidas, label: 'Bebida', color: 'blue', tipo: 'bebida' },
+    postres: { items: postres, setItems: setPostres, label: 'Postre', color: 'purple', tipo: 'postre' }
+  };
+
+  const categoriaActual = categorias[tipoActivo];
+  const itemsActuales = categoriaActual.items;
+  const setItemsActuales = categoriaActual.setItems;
+
+  const openModal = (item = null) => {
+    if (item) {
+      setEditingItem(item);
+      setFormData(item);
+    } else {
+      setEditingItem(null);
+      setFormData({ nombre: '', precio: '', disponible: true });
+    }
+    setModalOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!formData.nombre || !formData.precio) {
+      alert('Complete todos los campos');
+      return;
+    }
+
+    if (editingItem) {
+      setItemsActuales(itemsActuales.map(i => 
+        i._id === editingItem._id ? { ...formData, _id: i._id } : i
+      ));
+    } else {
+      setItemsActuales([...itemsActuales, { ...formData, _id: Date.now(), tipo: categoriaActual.tipo }]);
+    }
+    setModalOpen(false);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm(`¿Eliminar este ${categoriaActual.label.toLowerCase()}?`)) {
+      setItemsActuales(itemsActuales.filter(i => i._id !== id));
+    }
+  };
+
+  const toggleDisponible = (id) => {
+    setItemsActuales(itemsActuales.map(i => 
+      i._id === id ? { ...i, disponible: !i.disponible } : i
+    ));
+  };
+
+  const getColorClasses = (color) => {
+    const colors = {
+      green: 'from-green-500 to-emerald-600',
+      orange: 'from-orange-500 to-red-600',
+      blue: 'from-blue-500 to-indigo-600',
+      purple: 'from-purple-500 to-pink-600'
+    };
+    return colors[color];
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-gray-800">Gestión del Menú Completo</h2>
+
+      <div className="flex gap-3 flex-wrap">
+        {Object.entries(categorias).map(([key, cat]) => (
+          <button
+            key={key}
+            onClick={() => setTipoActivo(key)}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              tipoActivo === key
+                ? `bg-gradient-to-r ${getColorClasses(cat.color)} text-white shadow-lg`
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {cat.label}s
+          </button>
+        ))}
+        <button
+          onClick={() => openModal()}
+          className="ml-auto flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-xl transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Agregar {categoriaActual.label}
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <tr>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Nombre</th>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Precio</th>
+              <th className="text-left py-4 px-6 font-bold text-gray-700">Estado</th>
+              <th className="text-right py-4 px-6 font-bold text-gray-700">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {itemsActuales.map((item) => (
+              <tr key={item._id} className="border-b border-gray-100 hover:bg-orange-50 transition-colors">
+                <td className="py-4 px-6 font-medium text-gray-800">{item.nombre}</td>
+                <td className="py-4 px-6 text-gray-700 font-semibold">S/ {item.precio.toFixed(2)}</td>
+                <td className="py-4 px-6">
+                  <button
+                    onClick={() => toggleDisponible(item._id)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                      item.disponible
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {item.disponible ? 'Disponible' : 'No disponible'}
+                  </button>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => openModal(item)}
+                      className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item._id)}
+                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {itemsActuales.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No hay {categoriaActual.label.toLowerCase()}s registrados
+          </div>
+        )}
+      </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <h3 className="text-2xl font-bold mb-6">
+              {editingItem ? 'Editar' : 'Nuevo'} {categoriaActual.label}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Nombre</label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                  placeholder={`Nombre del ${categoriaActual.label.toLowerCase()}`}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Precio (S/)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.precio}
+                  onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="disponible"
+                  checked={formData.disponible}
+                  onChange={(e) => setFormData({ ...formData, disponible: e.target.checked })}
+                  className="w-5 h-5 text-orange-500 rounded focus:ring-orange-500"
+                />
+                <label htmlFor="disponible" className="font-semibold text-gray-700">
+                  Marcar como disponible
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:shadow-xl transition-all"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

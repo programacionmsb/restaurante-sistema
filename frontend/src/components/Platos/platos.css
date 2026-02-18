@@ -1,0 +1,261 @@
+/* Gestión de Platos */
+.platos-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.platos-header {
+  background: white;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.platos-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.platos-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs de categorías */
+.platos-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.plato-tab {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.plato-tab:hover {
+  color: #8b5cf6;
+}
+
+.plato-tab.active {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+}
+
+/* Grid de platos */
+.platos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card de plato */
+.plato-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.plato-card:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  transform: translateY(-4px);
+}
+
+.plato-card.entrada {
+  border-left: 4px solid #10b981;
+}
+
+.plato-card.plato {
+  border-left: 4px solid #f59e0b;
+}
+
+.plato-card.bebida {
+  border-left: 4px solid #3b82f6;
+}
+
+.plato-card.postre {
+  border-left: 4px solid #a855f7;
+}
+
+.plato-card.menu {
+  border-left: 4px solid #ec4899;
+}
+
+.plato-card.otros {
+  border-left: 4px solid #6b7280;
+}
+
+.plato-badge-tipo {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.plato-badge-tipo.entrada {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.plato-badge-tipo.plato {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.plato-badge-tipo.bebida {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.plato-badge-tipo.postre {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.plato-badge-tipo.menu {
+  background: #fce7f3;
+  color: #9f1239;
+}
+
+.plato-badge-tipo.otros {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.plato-nombre {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.plato-precio {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #8b5cf6;
+  margin-bottom: 1rem;
+}
+
+.plato-disponibilidad {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.plato-disponibilidad.disponible {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.plato-disponibilidad.no-disponible {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.plato-acciones {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Estado vacío */
+.platos-vacio {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #9ca3af;
+}
+
+.platos-vacio-icono {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Formulario de plato */
+.plato-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.plato-tipo-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.plato-tipo-option {
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  font-weight: 600;
+}
+
+.plato-tipo-option:hover {
+  border-color: #8b5cf6;
+  background: #f5f3ff;
+}
+
+.plato-tipo-option.selected {
+  border-color: #8b5cf6;
+  background: #8b5cf6;
+  color: white;
+}
+
+.plato-tipo-option.entrada.selected {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.plato-tipo-option.plato.selected {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.plato-tipo-option.bebida.selected {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.plato-tipo-option.postre.selected {
+  background: #a855f7;
+  border-color: #a855f7;
+}
+
+.plato-tipo-option.menu.selected {
+  background: #ec4899;
+  border-color: #ec4899;
+}
+
+.plato-tipo-option.otros.selected {
+  background: #6b7280;
+  border-color: #6b7280;
+}
