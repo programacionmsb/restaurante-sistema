@@ -28,10 +28,8 @@ export default function PedidosList() {
       if (filtroFecha === 'hoy') {
         data = await pedidosAPI.getHoy();
       } else if (filtroFecha === 'personalizado' && fechaPersonalizada) {
-        // Usar la fecha personalizada
         data = await pedidosAPI.getPorRango(fechaPersonalizada, fechaPersonalizada);
       } else {
-        // Calcular rango según filtro
         const hoy = new Date();
         let fechaInicio;
         
@@ -88,7 +86,6 @@ export default function PedidosList() {
       return;
     }
 
-    // Obtener nombre del usuario desde localStorage
     const usuarioData = localStorage.getItem('usuario');
     let nombreUsuario = 'Sistema';
     
@@ -97,7 +94,7 @@ export default function PedidosList() {
         const usuario = JSON.parse(usuarioData);
         nombreUsuario = usuario.nombre || 'Sistema';
       } catch (e) {
-        nombreUsuario = usuarioData; // Si no es JSON, usar como string directo
+        nombreUsuario = usuarioData;
       }
     }
     
@@ -196,22 +193,18 @@ export default function PedidosList() {
     return 'Seleccionar Fecha';
   };
 
-  // Función helper para extraer el nombre del usuario de forma segura
   const getNombreUsuario = (usuarioData) => {
     if (!usuarioData) return 'Sistema';
     
-    // Si es un string que parece JSON
     if (typeof usuarioData === 'string') {
       try {
         const parsed = JSON.parse(usuarioData);
         return parsed.nombre || 'Sistema';
       } catch (e) {
-        // Si no es JSON válido, retornar el string directo
         return usuarioData;
       }
     }
     
-    // Si es un objeto
     if (typeof usuarioData === 'object' && usuarioData.nombre) {
       return usuarioData.nombre;
     }
@@ -255,7 +248,7 @@ export default function PedidosList() {
 
       {/* Main Content */}
       <main className="pedidos-main">
-        {/* Estadísticas rápidas */}
+        {/* Estadísticas */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -470,7 +463,6 @@ export default function PedidosList() {
                   borderRadius: '0.5rem',
                   fontSize: '0.875rem'
                 }}>
-                  {/* Fecha */}
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
@@ -487,7 +479,6 @@ export default function PedidosList() {
                     </div>
                   </div>
 
-                  {/* Pedido */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#6b7280' }}>Pedido:</span>
                     <span style={{ fontWeight: '600', color: '#1f2937' }}>
@@ -495,7 +486,6 @@ export default function PedidosList() {
                     </span>
                   </div>
 
-                  {/* Preparación */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#6b7280' }}>Preparación:</span>
                     <span style={{ fontWeight: '600', color: '#1f2937' }}>
@@ -503,7 +493,6 @@ export default function PedidosList() {
                     </span>
                   </div>
 
-                  {/* Listo */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#6b7280' }}>Listo:</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -523,7 +512,7 @@ export default function PedidosList() {
                   </div>
                 </div>
 
-                {/* Información de cancelación - CORREGIDO */}
+                {/* Información de cancelación */}
                 {pedido.cancelado && (
                   <div style={{
                     background: '#fee2e2',
@@ -586,27 +575,10 @@ export default function PedidosList() {
                   </div>
                 )}
 
-                {/* Acciones según permisos */}
+                {/* Acciones */}
                 {!pedido.cancelado && (
                   <div className="pedido-acciones">
-                    {/* Editar pedido (solo pendientes) */}
-                    {pedido.estado === 'pendiente' && (
-                      <ProtectedAction permisos={['pedidos.editar']}>
-                        <button 
-                          className="btn-accion btn-editar"
-                          onClick={() => handleEditarPedido(pedido)}
-                          style={{
-                            background: '#dbeafe',
-                            color: '#1e40af'
-                          }}
-                        >
-                          <Edit2 size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                          Editar
-                        </button>
-                      </ProtectedAction>
-                    )}
-
-                    {/* Botón para cocina */}
+                    {/* Botones para cocina */}
                     {pedido.estado === 'pendiente' && (
                       <ProtectedAction permisos={['cocina.actualizar']}>
                         <button 
@@ -630,7 +602,7 @@ export default function PedidosList() {
                       </ProtectedAction>
                     )}
 
-                    {/* Botón para cobrar - CAMBIADO: tarjeta → yape */}
+                    {/* Botón para cobrar */}
                     {pedido.estado === 'completado' && pedido.estadoPago === 'pendiente' && (
                       <ProtectedAction permisos={['caja.cobrar']}>
                         <button 
@@ -649,21 +621,46 @@ export default function PedidosList() {
                       </ProtectedAction>
                     )}
 
-                    {/* Botón cancelar (solo para pendientes y no pagados) */}
+                    {/* Botones de edición y cancelación (SOLO PARA PENDIENTES) */}
                     {pedido.estado === 'pendiente' && pedido.estadoPago === 'pendiente' && (
-                      <ProtectedAction permisos={['pedidos.cancelar']}>
-                        <button 
-                          className="btn-accion btn-cancelar"
-                          onClick={() => handleCancelarPedido(pedido._id)}
-                          style={{
-                            background: '#fee2e2',
-                            color: '#991b1b'
-                          }}
-                        >
-                          <XCircle size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                          Cancelar
-                        </button>
-                      </ProtectedAction>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '1fr 1fr', 
+                        gap: '0.5rem',
+                        marginTop: '0.5rem' 
+                      }}>
+                        <ProtectedAction permisos={['pedidos.editar']}>
+                          <button 
+                            className="btn-accion btn-editar"
+                            onClick={() => handleEditarPedido(pedido)}
+                            style={{
+                              background: '#dbeafe',
+                              color: '#1e40af',
+                              padding: '0.75rem',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            <Edit2 size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                            Editar
+                          </button>
+                        </ProtectedAction>
+
+                        <ProtectedAction permisos={['pedidos.cancelar']}>
+                          <button 
+                            className="btn-accion btn-cancelar"
+                            onClick={() => handleCancelarPedido(pedido._id)}
+                            style={{
+                              background: '#fee2e2',
+                              color: '#991b1b',
+                              padding: '0.75rem',
+                              fontSize: '0.875rem'
+                            }}
+                          >
+                            <XCircle size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                            Cancelar
+                          </button>
+                        </ProtectedAction>
+                      </div>
                     )}
                   </div>
                 )}
