@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Clock, CheckCircle, DollarSign, Edit2, XCircle, Calendar } from 'lucide-react';
+import { ShoppingCart, Plus, Clock, CheckCircle, DollarSign, Edit2, XCircle, Calendar, Users } from 'lucide-react';
 import { pedidosAPI } from '../../services/apiPedidos';
 import { authAPI } from '../../services/apiAuth';
 import PedidoModal from './PedidoModal';
@@ -15,10 +15,23 @@ export default function PedidosList() {
   const [filtroFecha, setFiltroFecha] = useState('hoy');
   const [fechaPersonalizada, setFechaPersonalizada] = useState('');
   const [mostrarSelectorFecha, setMostrarSelectorFecha] = useState(false);
+  const [usuarios, setUsuarios] = useState([]);
+  const [filtroUsuario, setFiltroUsuario] = useState('todos');
 
   useEffect(() => {
     cargarPedidosPorFecha();
+    cargarUsuarios();
   }, [filtroFecha, fechaPersonalizada]);
+
+  const cargarUsuarios = async () => {
+    try {
+      const response = await fetch('https://restaurante-backend-a6o9.onrender.com/api/usuarios');
+      const data = await response.json();
+      setUsuarios(data);
+    } catch (error) {
+      console.error('Error al cargar usuarios:', error);
+    }
+  };
 
   const cargarPedidosPorFecha = async () => {
     setLoading(true);
@@ -27,24 +40,26 @@ export default function PedidosList() {
       
       if (filtroFecha === 'hoy') {
         data = await pedidosAPI.getHoy();
+      } else if (filtroFecha === 'ayer') {
+        // CORREGIDO: Calcular correctamente solo el día de ayer
+        const ayer = new Date();
+        ayer.setDate(ayer.getDate() - 1);
+        const ayerStr = ayer.toISOString().split('T')[0];
+        data = await pedidosAPI.getPorRango(ayerStr, ayerStr);
       } else if (filtroFecha === 'personalizado' && fechaPersonalizada) {
         data = await pedidosAPI.getPorRango(fechaPersonalizada, fechaPersonalizada);
       } else {
         const hoy = new Date();
         let fechaInicio;
+        let fechaFin = new Date(hoy);
         
-        if (filtroFecha === 'ayer') {
-          fechaInicio = new Date(hoy);
-          fechaInicio.setDate(hoy.getDate() - 1);
-        } else if (filtroFecha === 'ultimos7') {
+        if (filtroFecha === 'ultimos7') {
           fechaInicio = new Date(hoy);
           fechaInicio.setDate(hoy.getDate() - 6);
         } else if (filtroFecha === 'ultimos30') {
           fechaInicio = new Date(hoy);
           fechaInicio.setDate(hoy.getDate() - 29);
         }
-        
-        const fechaFin = new Date(hoy);
         
         data = await pedidosAPI.getPorRango(
           fechaInicio.toISOString().split('T')[0],
@@ -128,14 +143,24 @@ export default function PedidosList() {
     }
   };
 
+  // Filtrar pedidos por estado y usuario
   const pedidosFiltrados = pedidos.filter(p => {
-    if (filtroEstado === 'todos') return !p.cancelado;
-    if (filtroEstado === 'pendientes') return p.estado === 'pendiente' && !p.cancelado;
-    if (filtroEstado === 'en_preparacion') return p.estado === 'en_preparacion' && !p.cancelado;
-    if (filtroEstado === 'completados') return p.estado === 'completado' && !p.cancelado;
-    if (filtroEstado === 'por_cobrar') return p.estadoPago === 'pendiente' && !p.cancelado;
-    if (filtroEstado === 'cancelados') return p.cancelado;
-    return true;
+    // Filtro por estado
+    let pasaEstado = false;
+    if (filtroEstado === 'todos') pasaEstado = !p.cancelado;
+    if (filtroEstado === 'pendientes') pasaEstado = p.estado === 'pendiente' && !p.cancelado;
+    if (filtroEstado === 'en_preparacion') pasaEstado = p.estado === 'en_preparacion' && !p.cancelado;
+    if (filtroEstado === 'completados') pasaEstado = p.estado === 'completado' && !p.cancelado;
+    if (filtroEstado === 'por_cobrar') pasaEstado = p.estadoPago === 'pendiente' && !p.cancelado;
+    if (filtroEstado === 'cancelados') pasaEstado = p.cancelado;
+    
+    // Filtro por usuario (solo si se seleccionó un usuario específico)
+    let pasaUsuario = true;
+    if (filtroUsuario !== 'todos' && p.usuarioCreador && p.usuarioCreador._id) {
+      pasaUsuario = p.usuarioCreador._id === filtroUsuario;
+    }
+    
+    return pasaEstado && pasaUsuario;
   });
 
   const formatFechaCompleta = (fecha) => {
@@ -181,13 +206,31 @@ export default function PedidosList() {
     return labels[estado] || estado;
   };
 
+  // CORREGIDO: Calcular la fecha correcta que se muestra
+  const getFechaActual = () => {
+    if (filtroFecha === 'hoy') {
+      const hoy = new Date();
+      return hoy.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    if (filtroFecha === 'ayer') {
+      const ayer = new Date();
+      ayer.setDate(ayer.getDate() - 1);
+      return ayer.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    if (filtroFecha === 'personalizado' && fechaPersonalizada) {
+      const date = new Date(fechaPersonalizada + 'T00:00:00');
+      return date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+    return '';
+  };
+
   const getFiltroFechaLabel = () => {
     if (filtroFecha === 'hoy') return 'Hoy';
     if (filtroFecha === 'ayer') return 'Ayer';
     if (filtroFecha === 'ultimos7') return 'Últimos 7 días';
     if (filtroFecha === 'ultimos30') return 'Últimos 30 días';
     if (filtroFecha === 'personalizado' && fechaPersonalizada) {
-      const date = new Date(fechaPersonalizada);
+      const date = new Date(fechaPersonalizada + 'T00:00:00');
       return date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
     return 'Seleccionar Fecha';
@@ -212,14 +255,21 @@ export default function PedidosList() {
     return 'Sistema';
   };
 
+  // Verificar si el usuario actual puede ver el filtro de usuarios
+  const puedeVerFiltroUsuarios = () => {
+    const user = authAPI.getCurrentUser();
+    if (!user || !user.rol || !user.rol.permisos) return false;
+    return user.rol.permisos.includes('pedidos.ver_todos');
+  };
+
   const estadisticas = {
-    total: pedidos.filter(p => !p.cancelado).length,
-    pendientes: pedidos.filter(p => p.estado === 'pendiente' && !p.cancelado).length,
-    enPreparacion: pedidos.filter(p => p.estado === 'en_preparacion' && !p.cancelado).length,
-    completados: pedidos.filter(p => p.estado === 'completado' && !p.cancelado).length,
-    porCobrar: pedidos.filter(p => p.estadoPago === 'pendiente' && !p.cancelado).length,
-    cancelados: pedidos.filter(p => p.cancelado).length,
-    totalVentas: pedidos.filter(p => !p.cancelado).reduce((sum, p) => sum + p.total, 0)
+    total: pedidosFiltrados.filter(p => !p.cancelado).length,
+    pendientes: pedidosFiltrados.filter(p => p.estado === 'pendiente' && !p.cancelado).length,
+    enPreparacion: pedidosFiltrados.filter(p => p.estado === 'en_preparacion' && !p.cancelado).length,
+    completados: pedidosFiltrados.filter(p => p.estado === 'completado' && !p.cancelado).length,
+    porCobrar: pedidosFiltrados.filter(p => p.estadoPago === 'pendiente' && !p.cancelado).length,
+    cancelados: pedidosFiltrados.filter(p => p.cancelado).length,
+    totalVentas: pedidosFiltrados.filter(p => !p.cancelado).reduce((sum, p) => sum + p.total, 0)
   };
 
   if (loading) {
@@ -281,7 +331,7 @@ export default function PedidosList() {
           {/* Top Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1f2937' }}>
-              Pedidos: {getFiltroFechaLabel()} ({pedidosFiltrados.length})
+              Pedidos: {getFechaActual()} ({pedidosFiltrados.length})
             </h2>
             
             <ProtectedAction permisos={['pedidos.crear']}>
@@ -398,6 +448,33 @@ export default function PedidosList() {
                 }}
               />
             </div>
+
+            {/* Filtro por Usuario (solo para admin/supervisor) */}
+            {puedeVerFiltroUsuarios() && (
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto' }}>
+                <Users size={16} style={{ color: '#6b7280' }} />
+                <select
+                  value={filtroUsuario}
+                  onChange={(e) => setFiltroUsuario(e.target.value)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    background: 'white',
+                    fontWeight: '600'
+                  }}
+                >
+                  <option value="todos">Todos los usuarios</option>
+                  {usuarios.map(usuario => (
+                    <option key={usuario._id} value={usuario._id}>
+                      {usuario.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Filtros de Estado */}
@@ -510,6 +587,22 @@ export default function PedidosList() {
                       )}
                     </div>
                   </div>
+
+                  {/* Mostrar usuario que creó el pedido */}
+                  {pedido.usuarioCreador && pedido.usuarioCreador.nombre && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      paddingTop: '0.5rem',
+                      borderTop: '1px solid #e5e7eb'
+                    }}>
+                      <span style={{ color: '#6b7280' }}>Mesero:</span>
+                      <span style={{ fontWeight: '600', color: '#667eea' }}>
+                        {pedido.usuarioCreador.nombre}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Información de cancelación */}
@@ -629,37 +722,41 @@ export default function PedidosList() {
                         gap: '0.5rem',
                         marginTop: '0.5rem' 
                       }}>
-                        <ProtectedAction permisos={['pedidos.editar']}>
-                          <button 
-                            className="btn-accion btn-editar"
-                            onClick={() => handleEditarPedido(pedido)}
-                            style={{
-                              background: '#dbeafe',
-                              color: '#1e40af',
-                              padding: '0.75rem',
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            <Edit2 size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                            Editar
-                          </button>
-                        </ProtectedAction>
+                        <button 
+                          className="btn-accion btn-editar"
+                          onClick={() => handleEditarPedido(pedido)}
+                          style={{
+                            background: '#dbeafe',
+                            color: '#1e40af',
+                            padding: '0.75rem',
+                            fontSize: '0.875rem',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                          }}
+                        >
+                          <Edit2 size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                          Editar
+                        </button>
 
-                        <ProtectedAction permisos={['pedidos.cancelar']}>
-                          <button 
-                            className="btn-accion btn-cancelar"
-                            onClick={() => handleCancelarPedido(pedido._id)}
-                            style={{
-                              background: '#fee2e2',
-                              color: '#991b1b',
-                              padding: '0.75rem',
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            <XCircle size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                            Cancelar
-                          </button>
-                        </ProtectedAction>
+                        <button 
+                          className="btn-accion btn-cancelar"
+                          onClick={() => handleCancelarPedido(pedido._id)}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#991b1b',
+                            padding: '0.75rem',
+                            fontSize: '0.875rem',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                          }}
+                        >
+                          <XCircle size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                          Cancelar
+                        </button>
                       </div>
                     )}
                   </div>
