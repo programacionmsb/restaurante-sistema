@@ -217,32 +217,62 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
     }, 0);
   };
 
-  // Obtener usuario actual para agregar como creador
-const usuarioActual = localStorage.getItem('usuario');
-let usuarioCreador = null;
+  const handleGuardarPedido = async () => {
+    if (!formData.cliente) {
+      alert('Seleccione un cliente');
+      return;
+    }
 
-if (usuarioActual) {
-  try {
-    const user = JSON.parse(usuarioActual);
-    usuarioCreador = {
-      _id: user._id,
-      nombre: user.nombre,
-      usuario: user.usuario
+    if (!formData.mesa) {
+      alert('Ingrese el número de mesa');
+      return;
+    }
+
+    const itemsArray = Object.values(items);
+    if (itemsArray.length === 0) {
+      alert('Agregue al menos un item al pedido');
+      return;
+    }
+
+    // Obtener usuario actual para agregar como creador
+    const usuarioActual = localStorage.getItem('usuario');
+    let usuarioCreador = null;
+    
+    if (usuarioActual) {
+      try {
+        const user = JSON.parse(usuarioActual);
+        usuarioCreador = {
+          _id: user._id,
+          nombre: user.nombre,
+          usuario: user.usuario
+        };
+      } catch (e) {
+        console.error('Error al obtener usuario:', e);
+      }
+    }
+
+    const pedidoData = {
+      cliente: formData.cliente,
+      mesa: formData.mesa,
+      items: itemsArray,
+      total: calcularTotal(),
+      totalDescuentos: calcularDescuentoTotal(),
+      hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
+      usuarioCreador: usuarioCreador
     };
-  } catch (e) {
-    console.error('Error al obtener usuario:', e);
-  }
-}
 
-const pedidoData = {
-  cliente: formData.cliente,
-  mesa: formData.mesa,
-  items: itemsArray,
-  total: calcularTotal(),
-  totalDescuentos: calcularDescuentoTotal(),
-  hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
-  usuarioCreador: usuarioCreador // ← AGREGADO
-};
+    try {
+      if (pedidoEditar) {
+        await pedidosAPI.update(pedidoEditar._id, pedidoData);
+      } else {
+        await pedidosAPI.create(pedidoData);
+      }
+      onSave();
+      onClose();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   if (!isOpen) return null;
 
