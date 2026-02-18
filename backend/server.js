@@ -14,26 +14,16 @@ const io = socketIo(server, {
   }
 });
 
-// Configurar CORS para producción
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'https://restaurante-frontend-0i7o.onrender.com',
-      'http://localhost:3000'
-    ];
-    
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+// Configurar CORS
+app.use(cors({
+  origin: [
+    'https://restaurante-frontend-0i7o.onrender.com',
+    'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-app.use(cors(corsOptions));
+}));
 
 app.use(express.json());
 
