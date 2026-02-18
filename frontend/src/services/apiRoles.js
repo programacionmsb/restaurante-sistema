@@ -1,4 +1,4 @@
-const API_URL = 'https://restaurante-backend-a6o9.onrender.com'
+const API_URL = 'https://restaurante-backend-a6o9.onrender.com/api'
 
 // Servicio de Roles
 export const rolesAPI = {
