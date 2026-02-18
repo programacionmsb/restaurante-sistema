@@ -17,7 +17,7 @@ const io = socketIo(server, {
 // Configurar CORS
 app.use(cors({
   origin: [
-    'https://restaurante-frontend-0i7o.onrender.com',
+    'https://restaurante-frontend-017o.onrender.com',  // ← URL CORRECTA
     'http://localhost:3000'
   ],
   credentials: true,
