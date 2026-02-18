@@ -183,6 +183,49 @@ const pedidoSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// ============================================================================
+// AGREGAR ESTE SCHEMA ANTES DE usuarioSchema (línea ~185 en tu server.js)
+// ============================================================================
+
+// Schema de Rol
+const rolSchema = new mongoose.Schema({
+  nombre: { 
+    type: String, 
+    required: true,
+    unique: true,
+    trim: true
+  },
+  descripcion: { 
+    type: String,
+    default: ''
+  },
+  permisos: [{ 
+    type: String,
+    validate: {
+      validator: function(v) {
+        return Object.keys(PERMISOS_DISPONIBLES).includes(v);
+      },
+      message: props => `${props.value} no es un permiso válido`
+    }
+  }],
+  esPredefinido: { 
+    type: Boolean, 
+    default: false 
+  },
+  color: { 
+    type: String, 
+    default: '#667eea' 
+  },
+  activo: { 
+    type: Boolean, 
+    default: true 
+  },
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  }
+});
+
 // Schema de Usuario
 const usuarioSchema = new mongoose.Schema({
   nombre: { 
