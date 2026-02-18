@@ -1,4 +1,4 @@
-const API_URL = 'https://turbo-dollop-g456jw96qpwqfg7x-5000.app.github.dev/api';
+const API_URL = 'https://restaurante-backend-a6o9.onrender.com'
 
 // Servicio de Clientes
 export const clientesAPI = {
