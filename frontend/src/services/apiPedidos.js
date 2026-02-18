@@ -2,28 +2,85 @@ const API_URL = 'https://restaurante-backend-a6o9.onrender.com/api'
 
 // Servicio de Pedidos
 export const pedidosAPI = {
-  // Obtener pedidos del día
+  // Obtener pedidos del día (con filtro de usuario)
   getHoy: async () => {
-    const response = await fetch(`${API_URL}/pedidos/hoy`);
+    // Obtener usuario actual
+    const userStr = localStorage.getItem('usuario');
+    let userId = null;
+    
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        userId = user._id;
+      } catch (e) {
+        console.error('Error al obtener usuario:', e);
+      }
+    }
+    
+    const url = userId ? `${API_URL}/pedidos/hoy?usuarioId=${userId}` : `${API_URL}/pedidos/hoy`;
+    const response = await fetch(url);
     if (!response.ok) throw new Error('Error al cargar pedidos');
     return await response.json();
   },
 
-  // Obtener pedidos por rango de fechas
+  // Obtener pedidos por rango de fechas (con filtro de usuario)
   getPorRango: async (fechaInicio, fechaFin) => {
-    const response = await fetch(
-      `${API_URL}/pedidos/rango?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
-    );
+    // Obtener usuario actual
+    const userStr = localStorage.getItem('usuario');
+    let userId = null;
+    
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        userId = user._id;
+      } catch (e) {
+        console.error('Error al obtener usuario:', e);
+      }
+    }
+    
+    const params = new URLSearchParams({
+      fechaInicio,
+      fechaFin
+    });
+    
+    if (userId) {
+      params.append('usuarioId', userId);
+    }
+    
+    const response = await fetch(`${API_URL}/pedidos/rango?${params.toString()}`);
     if (!response.ok) throw new Error('Error al cargar pedidos por rango');
     return await response.json();
   },
 
-  // Crear nuevo pedido
+  // Crear nuevo pedido (con usuario creador)
   create: async (pedidoData) => {
+    // Obtener usuario actual
+    const userStr = localStorage.getItem('usuario');
+    let usuarioCreador = null;
+    
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        usuarioCreador = {
+          _id: user._id,
+          nombre: user.nombre,
+          usuario: user.usuario
+        };
+      } catch (e) {
+        console.error('Error al obtener usuario:', e);
+      }
+    }
+    
+    // Agregar usuario creador al pedido
+    const pedidoConUsuario = {
+      ...pedidoData,
+      usuarioCreador
+    };
+    
     const response = await fetch(`${API_URL}/pedidos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pedidoData)
+      body: JSON.stringify(pedidoConUsuario)
     });
     if (!response.ok) {
       const error = await response.json();

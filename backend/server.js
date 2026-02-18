@@ -115,6 +115,10 @@ const platoSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// ============================================================================
+// SCHEMA DE PEDIDO ACTUALIZADO
+// ============================================================================
+
 // Schema de Pedido
 const pedidoSchema = new mongoose.Schema({
   cliente: { type: String, required: true },
@@ -170,6 +174,12 @@ const pedidoSchema = new mongoose.Schema({
   motivoCancelacion: { type: String },
   fechaCancelacion: { type: Date },
   usuarioCancelacion: { type: String },
+  // NUEVO CAMPO: Usuario que creó el pedido
+  usuarioCreador: {
+    _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
+    nombre: String,
+    usuario: String
+  },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -498,13 +508,30 @@ app.delete('/api/platos/:id', async (req, res) => {
 });
 
 // ============================================================================
-// RUTAS - PEDIDOS
+// RUTAS DE PEDIDOS ACTUALIZADAS CON FILTRO POR USUARIO
 // ============================================================================
+
 app.get('/api/pedidos/hoy', async (req, res) => {
   try {
+    const { usuarioId } = req.query;
+    
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    const pedidos = await Pedido.find({ createdAt: { $gte: hoy } }).sort({ createdAt: -1 });
+    
+    let filtro = { createdAt: { $gte: hoy } };
+    
+    // Si se proporciona usuarioId, verificar permisos
+    if (usuarioId) {
+      const usuario = await Usuario.findById(usuarioId).populate('rol');
+      
+      // Si NO es administrador, filtrar solo sus pedidos
+      if (usuario && !usuario.rol.permisos.includes('pedidos.ver_todos')) {
+        filtro['usuarioCreador._id'] = usuarioId;
+      }
+      // Si es administrador o tiene permiso ver_todos, muestra todos (no agrega filtro adicional)
+    }
+    
+    const pedidos = await Pedido.find(filtro).sort({ createdAt: -1 });
     res.json(pedidos);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -513,7 +540,7 @@ app.get('/api/pedidos/hoy', async (req, res) => {
 
 app.get('/api/pedidos/rango', async (req, res) => {
   try {
-    const { fechaInicio, fechaFin } = req.query;
+    const { fechaInicio, fechaFin, usuarioId } = req.query;
     
     if (!fechaInicio || !fechaFin) {
       return res.status(400).json({ error: 'Debe proporcionar fechaInicio y fechaFin' });
@@ -525,12 +552,24 @@ app.get('/api/pedidos/rango', async (req, res) => {
     const fin = new Date(fechaFin);
     fin.setHours(23, 59, 59, 999);
 
-    const pedidos = await Pedido.find({ 
+    let filtro = { 
       createdAt: { 
         $gte: inicio,
         $lte: fin
       } 
-    }).sort({ createdAt: -1 });
+    };
+    
+    // Si se proporciona usuarioId, verificar permisos
+    if (usuarioId) {
+      const usuario = await Usuario.findById(usuarioId).populate('rol');
+      
+      // Si NO es administrador, filtrar solo sus pedidos
+      if (usuario && !usuario.rol.permisos.includes('pedidos.ver_todos')) {
+        filtro['usuarioCreador._id'] = usuarioId;
+      }
+    }
+    
+    const pedidos = await Pedido.find(filtro).sort({ createdAt: -1 });
     
     res.json(pedidos);
   } catch (error) {
