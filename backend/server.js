@@ -183,45 +183,6 @@ const pedidoSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Schema de Rol
-const rolSchema = new mongoose.Schema({
-  nombre: { 
-    type: String, 
-    required: true,
-    unique: true,
-    trim: true
-  },
-  descripcion: { 
-    type: String,
-    default: ''
-  },
-  permisos: [{ 
-    type: String,
-    validate: {
-      validator: function(v) {
-        return Object.keys(PERMISOS_DISPONIBLES).includes(v);
-      },
-      message: props => `${props.value} no es un permiso válido`
-    }
-  }],
-  esPredefinido: { 
-    type: Boolean, 
-    default: false 
-  },
-  color: { 
-    type: String, 
-    default: '#667eea' 
-  },
-  activo: { 
-    type: Boolean, 
-    default: true 
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
-});
-
 // Schema de Usuario
 const usuarioSchema = new mongoose.Schema({
   nombre: { 
@@ -524,11 +485,20 @@ app.get('/api/pedidos/hoy', async (req, res) => {
     if (usuarioId) {
       const usuario = await Usuario.findById(usuarioId).populate('rol');
       
-      // Si NO es administrador, filtrar solo sus pedidos
-      if (usuario && !usuario.rol.permisos.includes('pedidos.ver_todos')) {
-        filtro['usuarioCreador._id'] = usuarioId;
+      // Solo filtrar si NO tiene permisos para ver todos los pedidos
+      // (es decir, solo meseros ven sus propios pedidos)
+      if (usuario) {
+        const permisos = usuario.rol.permisos || [];
+        const puedeVerTodos = permisos.includes('pedidos.ver_todos') || 
+                              permisos.includes('cocina.ver') || 
+                              permisos.includes('caja.cobrar') ||
+                              permisos.includes('caja.ver_reportes');
+        
+        // Si NO puede ver todos, filtrar solo sus pedidos
+        if (!puedeVerTodos) {
+          filtro['usuarioCreador._id'] = usuarioId;
+        }
       }
-      // Si es administrador o tiene permiso ver_todos, muestra todos (no agrega filtro adicional)
     }
     
     const pedidos = await Pedido.find(filtro).sort({ createdAt: -1 });
@@ -563,9 +533,18 @@ app.get('/api/pedidos/rango', async (req, res) => {
     if (usuarioId) {
       const usuario = await Usuario.findById(usuarioId).populate('rol');
       
-      // Si NO es administrador, filtrar solo sus pedidos
-      if (usuario && !usuario.rol.permisos.includes('pedidos.ver_todos')) {
-        filtro['usuarioCreador._id'] = usuarioId;
+      // Solo filtrar si NO tiene permisos para ver todos los pedidos
+      if (usuario) {
+        const permisos = usuario.rol.permisos || [];
+        const puedeVerTodos = permisos.includes('pedidos.ver_todos') || 
+                              permisos.includes('cocina.ver') || 
+                              permisos.includes('caja.cobrar') ||
+                              permisos.includes('caja.ver_reportes');
+        
+        // Si NO puede ver todos, filtrar solo sus pedidos
+        if (!puedeVerTodos) {
+          filtro['usuarioCreador._id'] = usuarioId;
+        }
       }
     }
     
