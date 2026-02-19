@@ -512,15 +512,12 @@ app.delete('/api/platos/:id', async (req, res) => {
 });
 
 // ============================================================================
-// RUTAS DE PEDIDOS CON LOGS DE DEBUG
+// RUTAS DE PEDIDOS CORREGIDAS - MESERO PUEDE COBRAR PERO SOLO VE SUS PEDIDOS
 // ============================================================================
 
 app.get('/api/pedidos/hoy', async (req, res) => {
   try {
     const { usuarioId } = req.query;
-    
-    console.log('🔍 DEBUG /api/pedidos/hoy:');
-    console.log('   usuarioId recibido:', usuarioId);
     
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -531,40 +528,25 @@ app.get('/api/pedidos/hoy', async (req, res) => {
     if (usuarioId) {
       const usuario = await Usuario.findById(usuarioId).populate('rol');
       
-      console.log('   Usuario encontrado:', usuario ? usuario.nombre : 'NO ENCONTRADO');
-      
       if (usuario) {
         const permisos = usuario.rol.permisos || [];
-        console.log('   Permisos del usuario:', permisos);
         
+        // CORREGIDO: Solo estos permisos permiten ver TODOS los pedidos
         const puedeVerTodos = permisos.includes('pedidos.ver_todos') || 
                               permisos.includes('cocina.ver') || 
-                              permisos.includes('caja.cobrar') ||
                               permisos.includes('caja.ver_reportes');
         
-        console.log('   ¿Puede ver todos los pedidos?:', puedeVerTodos);
-        
         // Si NO puede ver todos, filtrar solo sus pedidos
+        // (El mesero puede tener caja.cobrar pero solo ve sus propios pedidos)
         if (!puedeVerTodos) {
-          const objectId = new mongoose.Types.ObjectId(usuarioId);
-          filtro['usuarioCreador._id'] = objectId;
-          console.log('   Aplicando filtro con ObjectId:', objectId);
-        } else {
-          console.log('   NO se aplica filtro - puede ver todos');
+          filtro['usuarioCreador._id'] = new mongoose.Types.ObjectId(usuarioId);
         }
       }
-    } else {
-      console.log('   NO se proporcionó usuarioId - mostrando todos los pedidos');
     }
     
-    console.log('   Filtro final:', JSON.stringify(filtro));
-    
     const pedidos = await Pedido.find(filtro).sort({ createdAt: -1 });
-    console.log('   Pedidos encontrados:', pedidos.length);
-    
     res.json(pedidos);
   } catch (error) {
-    console.error('❌ Error en /api/pedidos/hoy:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -572,9 +554,6 @@ app.get('/api/pedidos/hoy', async (req, res) => {
 app.get('/api/pedidos/rango', async (req, res) => {
   try {
     const { fechaInicio, fechaFin, usuarioId } = req.query;
-    
-    console.log('🔍 DEBUG /api/pedidos/rango:');
-    console.log('   usuarioId recibido:', usuarioId);
     
     if (!fechaInicio || !fechaFin) {
       return res.status(400).json({ error: 'Debe proporcionar fechaInicio y fechaFin' });
@@ -597,41 +576,117 @@ app.get('/api/pedidos/rango', async (req, res) => {
     if (usuarioId) {
       const usuario = await Usuario.findById(usuarioId).populate('rol');
       
-      console.log('   Usuario encontrado:', usuario ? usuario.nombre : 'NO ENCONTRADO');
-      
       if (usuario) {
         const permisos = usuario.rol.permisos || [];
-        console.log('   Permisos del usuario:', permisos);
         
+        // CORREGIDO: Solo estos permisos permiten ver TODOS los pedidos
         const puedeVerTodos = permisos.includes('pedidos.ver_todos') || 
                               permisos.includes('cocina.ver') || 
-                              permisos.includes('caja.cobrar') ||
                               permisos.includes('caja.ver_reportes');
-        
-        console.log('   ¿Puede ver todos los pedidos?:', puedeVerTodos);
         
         // Si NO puede ver todos, filtrar solo sus pedidos
         if (!puedeVerTodos) {
-          const objectId = new mongoose.Types.ObjectId(usuarioId);
-          filtro['usuarioCreador._id'] = objectId;
-          console.log('   Aplicando filtro con ObjectId:', objectId);
-        } else {
-          console.log('   NO se aplica filtro - puede ver todos');
+          filtro['usuarioCreador._id'] = new mongoose.Types.ObjectId(usuarioId);
         }
       }
-    } else {
-      console.log('   NO se proporcionó usuarioId - mostrando todos los pedidos');
     }
     
-    console.log('   Filtro final:', JSON.stringify(filtro));
-    
     const pedidos = await Pedido.find(filtro).sort({ createdAt: -1 });
-    console.log('   Pedidos encontrados:', pedidos.length);
     
     res.json(pedidos);
   } catch (error) {
-    console.error('❌ Error en /api/pedidos/rango:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/pedidos', async (req, res) => {
+  try {
+    const pedido = new Pedido(req.body);
+    await pedido.save();
+    emitirActualizacion('pedido-creado', pedido);
+    res.status(201).json(pedido);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.put('/api/pedidos/:id', async (req, res) => {
+  try {
+    const pedido = await Pedido.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    emitirActualizacion('pedido-actualizado', pedido);
+    res.json(pedido);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch('/api/pedidos/:id/estado', async (req, res) => {
+  try {
+    const { estado } = req.body;
+    const pedido = await Pedido.findById(req.params.id);
+    
+    if (!pedido) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    pedido.estado = estado;
+    
+    if (estado === 'en_preparacion' && !pedido.inicioPreparacion) {
+      pedido.inicioPreparacion = new Date();
+    }
+    
+    if (estado === 'completado' && !pedido.finPreparacion) {
+      pedido.finPreparacion = new Date();
+    }
+    
+    await pedido.save();
+    emitirActualizacion('pedido-actualizado', pedido);
+    res.json(pedido);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch('/api/pedidos/:id/pago', async (req, res) => {
+  try {
+    const { metodoPago } = req.body;
+    const pedido = await Pedido.findById(req.params.id);
+    
+    if (!pedido) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    pedido.estadoPago = 'pagado';
+    pedido.metodoPago = metodoPago;
+    
+    await pedido.save();
+    emitirActualizacion('pedido-pagado', pedido);
+    res.json(pedido);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.patch('/api/pedidos/:id/cancelar', async (req, res) => {
+  try {
+    const { motivo, usuario } = req.body;
+    const pedido = await Pedido.findById(req.params.id);
+    
+    if (!pedido) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+
+    pedido.cancelado = true;
+    pedido.motivoCancelacion = motivo;
+    pedido.usuarioCancelacion = usuario;
+    pedido.fechaCancelacion = new Date();
+    pedido.estado = 'cancelado';
+    
+    await pedido.save();
+    emitirActualizacion('pedido-cancelado', pedido);
+    res.json(pedido);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
