@@ -87,4 +87,4 @@ const cierreTurnoAPI = {
   },
 };
 
-export default cierreTurnoAPI;
+export { cierreTurnoAPI };

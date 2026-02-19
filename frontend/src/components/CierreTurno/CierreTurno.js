@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Clock, User, CheckCircle, AlertCircle, FileText, ArrowLeft, Download } from 'lucide-react';
-import cierreTurnoAPI from '../../services/cierreTurnoAPI';
-import authAPI from '../../services/authAPI';
+import { cierreTurnoAPI } from '../../services/apiCierreTurno';
+import { authAPI } from '../../services/apiAuth';
 import './CierreTurno.css';
 
 const CierreTurno = () => {
