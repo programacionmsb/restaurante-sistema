@@ -512,7 +512,7 @@ app.delete('/api/platos/:id', async (req, res) => {
 });
 
 // ============================================================================
-// RUTAS DE PEDIDOS ACTUALIZADAS CON FILTRO POR USUARIO
+// RUTAS DE PEDIDOS ACTUALIZADAS - CORREGIDO FILTRO
 // ============================================================================
 
 app.get('/api/pedidos/hoy', async (req, res) => {
@@ -529,7 +529,6 @@ app.get('/api/pedidos/hoy', async (req, res) => {
       const usuario = await Usuario.findById(usuarioId).populate('rol');
       
       // Solo filtrar si NO tiene permisos para ver todos los pedidos
-      // (es decir, solo meseros ven sus propios pedidos)
       if (usuario) {
         const permisos = usuario.rol.permisos || [];
         const puedeVerTodos = permisos.includes('pedidos.ver_todos') || 
@@ -539,7 +538,8 @@ app.get('/api/pedidos/hoy', async (req, res) => {
         
         // Si NO puede ver todos, filtrar solo sus pedidos
         if (!puedeVerTodos) {
-          filtro['usuarioCreador._id'] = usuarioId;
+          // CORREGIDO: Convertir a ObjectId para comparación correcta
+          filtro['usuarioCreador._id'] = new mongoose.Types.ObjectId(usuarioId);
         }
       }
     }
@@ -586,7 +586,8 @@ app.get('/api/pedidos/rango', async (req, res) => {
         
         // Si NO puede ver todos, filtrar solo sus pedidos
         if (!puedeVerTodos) {
-          filtro['usuarioCreador._id'] = usuarioId;
+          // CORREGIDO: Convertir a ObjectId para comparación correcta
+          filtro['usuarioCreador._id'] = new mongoose.Types.ObjectId(usuarioId);
         }
       }
     }
