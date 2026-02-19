@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Shield, LogOut, Menu as MenuIcon, UserCog, ShoppingCart, ChefHat, UtensilsCrossed, Calendar, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, Shield, LogOut, Menu as MenuIcon, UserCog, ShoppingCart, ChefHat, UtensilsCrossed, Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import { authAPI } from './services/apiAuth';
 import Login from './components/Auth/Login';
 import ClientesList from './components/Clientes/ClientesList';
@@ -11,6 +11,7 @@ import PlatosList from './components/Platos/PlatosList';
 import MenuView from './components/Menu/MenuView';
 import CajaView from './components/Caja/CajaView';
 import ReportesView from './components/Reportes/ReportesView';
+import CierreTurno from './components/CierreTurno/CierreTurno';
 
 export default function App() {
   const [usuario, setUsuario] = useState(null);
@@ -72,6 +73,13 @@ export default function App() {
       icon: DollarSign,
       permisos: ['caja.cobrar', 'caja.ver_reportes'],
       component: CajaView
+    },
+    {
+      id: 'cierre-turno',
+      label: 'Cierre de Turno',
+      icon: Clock,
+      permisos: ['caja.cobrar', 'pedidos.ver_propios'],
+      component: CierreTurno
     },
     {
       id: 'reportes',
