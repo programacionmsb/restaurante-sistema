@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Shield, LogOut, Menu as MenuIcon, UserCog, ShoppingCart, ChefHat, UtensilsCrossed, Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { Users, Shield, LogOut, Menu as MenuIcon, UserCog, ShoppingCart, ChefHat, UtensilsCrossed, Calendar, DollarSign, TrendingUp, Clock, CreditCard } from 'lucide-react';
 import { authAPI } from './services/apiAuth';
 import Login from './components/Auth/Login';
 import ClientesList from './components/Clientes/ClientesList';
@@ -12,6 +12,7 @@ import MenuView from './components/Menu/MenuView';
 import CajaView from './components/Caja/CajaView';
 import ReportesView from './components/Reportes/ReportesView';
 import CierreTurno from './components/CierreTurno/CierreTurno';
+import CreditosView from './components/Creditos/CreditosView';  // ← NUEVO
 
 export default function App() {
   const [usuario, setUsuario] = useState(null);
@@ -74,6 +75,15 @@ export default function App() {
       permisos: ['caja.cobrar', 'caja.ver_reportes'],
       component: CajaView
     },
+    // ========== NUEVO: CRÉDITOS ========== 
+    {
+      id: 'creditos',
+      label: 'Créditos',
+      icon: CreditCard,
+      permisos: ['creditos.ver_propios', 'creditos.ver_todos'],
+      component: CreditosView
+    },
+    // ========== FIN NUEVO ========== 
     {
       id: 'cierre-turno',
       label: 'Cierre de Turno',
