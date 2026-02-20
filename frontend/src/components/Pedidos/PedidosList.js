@@ -23,6 +23,16 @@ export default function PedidosList() {
     cargarUsuarios();
   }, [filtroFecha, fechaPersonalizada]);
 
+  // LOG DE DEBUG
+  useEffect(() => {
+    const user = authAPI.getCurrentUser();
+    console.log('=== DEBUG INICIAL ===');
+    console.log('Usuario completo:', user);
+    console.log('Permisos del rol:', user?.rol?.permisos);
+    console.log('¿Tiene creditos.crear?', authAPI.hasPermission('creditos.crear'));
+    console.log('=====================');
+  }, []);
+
   const cargarUsuarios = async () => {
     try {
       const response = await fetch('https://restaurante-backend-a6o9.onrender.com/api/usuarios');
@@ -41,7 +51,6 @@ export default function PedidosList() {
       if (filtroFecha === 'hoy') {
         data = await pedidosAPI.getHoy();
       } else if (filtroFecha === 'ayer') {
-        // CORREGIDO: Calcular correctamente solo el día de ayer
         const ayer = new Date();
         ayer.setDate(ayer.getDate() - 1);
         const ayerStr = ayer.toISOString().split('T')[0];
@@ -123,6 +132,38 @@ export default function PedidosList() {
     }
   };
 
+  const handleMarcarComoCredito = async (pedidoId) => {
+    const clienteNombre = prompt('Nombre del cliente (para el crédito):');
+    if (!clienteNombre || clienteNombre.trim() === '') {
+      alert('Debe ingresar el nombre del cliente');
+      return;
+    }
+
+    const clienteTelefono = prompt('Teléfono del cliente (opcional):');
+    const notas = prompt('Notas adicionales (opcional):');
+
+    const usuario = authAPI.getCurrentUser();
+    
+    if (window.confirm(`¿Marcar este pedido como crédito para "${clienteNombre}"?`)) {
+      try {
+        const { creditosAPI } = await import('../../services/apiCreditos');
+        
+        await creditosAPI.crearCredito({
+          pedidoId,
+          clienteNombre,
+          clienteTelefono: clienteTelefono || '',
+          notas: notas || '',
+          usuarioId: usuario._id
+        });
+        
+        alert('✅ Pedido marcado como crédito exitosamente');
+        cargarPedidosPorFecha();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+  };
+
   const handleEditarPedido = (pedido) => {
     setEditingPedido(pedido);
     setModalOpen(true);
@@ -143,9 +184,7 @@ export default function PedidosList() {
     }
   };
 
-  // Filtrar pedidos por estado y usuario
   const pedidosFiltrados = pedidos.filter(p => {
-    // Filtro por estado
     let pasaEstado = false;
     if (filtroEstado === 'todos') pasaEstado = !p.cancelado;
     if (filtroEstado === 'pendientes') pasaEstado = p.estado === 'pendiente' && !p.cancelado;
@@ -154,7 +193,6 @@ export default function PedidosList() {
     if (filtroEstado === 'por_cobrar') pasaEstado = p.estadoPago === 'pendiente' && !p.cancelado;
     if (filtroEstado === 'cancelados') pasaEstado = p.cancelado;
     
-    // Filtro por usuario (solo si se seleccionó un usuario específico)
     let pasaUsuario = true;
     if (filtroUsuario !== 'todos' && p.usuarioCreador && p.usuarioCreador._id) {
       pasaUsuario = p.usuarioCreador._id === filtroUsuario;
@@ -206,7 +244,6 @@ export default function PedidosList() {
     return labels[estado] || estado;
   };
 
-  // CORREGIDO: Calcular la fecha correcta que se muestra
   const getFechaActual = () => {
     if (filtroFecha === 'hoy') {
       const hoy = new Date();
@@ -255,7 +292,6 @@ export default function PedidosList() {
     return 'Sistema';
   };
 
-  // Verificar si el usuario actual puede ver el filtro de usuarios
   const puedeVerFiltroUsuarios = () => {
     const user = authAPI.getCurrentUser();
     if (!user || !user.rol || !user.rol.permisos) return false;
@@ -285,7 +321,6 @@ export default function PedidosList() {
 
   return (
     <div className="pedidos-container">
-      {/* Header */}
       <header className="pedidos-header">
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <ShoppingCart size={32} color="#f59e0b" />
@@ -296,9 +331,7 @@ export default function PedidosList() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="pedidos-main">
-        {/* Estadísticas */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -328,7 +361,6 @@ export default function PedidosList() {
         </div>
 
         <div className="pedidos-card">
-          {/* Top Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1f2937' }}>
               Pedidos: {getFechaActual()} ({pedidosFiltrados.length})
@@ -360,7 +392,6 @@ export default function PedidosList() {
             </ProtectedAction>
           </div>
 
-          {/* Filtros de Fecha */}
           <div style={{ 
             display: 'flex', 
             gap: '0.5rem', 
@@ -449,7 +480,6 @@ export default function PedidosList() {
               />
             </div>
 
-            {/* Filtro por Usuario (solo para admin/supervisor) */}
             {puedeVerFiltroUsuarios() && (
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginLeft: 'auto' }}>
                 <Users size={16} style={{ color: '#6b7280' }} />
@@ -477,7 +507,6 @@ export default function PedidosList() {
             )}
           </div>
 
-          {/* Filtros de Estado */}
           <div className="pedidos-tabs">
             <button 
               className={`pedido-tab ${filtroEstado === 'todos' ? 'active' : ''}`}
@@ -517,11 +546,9 @@ export default function PedidosList() {
             </button>
           </div>
 
-          {/* Grid de Pedidos */}
           <div className="pedidos-grid">
             {pedidosFiltrados.map((pedido) => (
               <div key={pedido._id} className={`pedido-card ${pedido.estado} ${pedido.cancelado ? 'cancelado' : ''}`}>
-                {/* Header */}
                 <div className="pedido-header">
                   <div>
                     <div className="pedido-mesa">Mesa {pedido.mesa}</div>
@@ -529,7 +556,6 @@ export default function PedidosList() {
                   </div>
                 </div>
 
-                {/* Tiempos con Fecha */}
                 <div style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
@@ -588,7 +614,6 @@ export default function PedidosList() {
                     </div>
                   </div>
 
-                  {/* Mostrar usuario que creó el pedido */}
                   {pedido.usuarioCreador && pedido.usuarioCreador.nombre && (
                     <div style={{ 
                       display: 'flex', 
@@ -605,7 +630,6 @@ export default function PedidosList() {
                   )}
                 </div>
 
-                {/* Información de cancelación */}
                 {pedido.cancelado && (
                   <div style={{
                     background: '#fee2e2',
@@ -640,7 +664,6 @@ export default function PedidosList() {
                   </div>
                 )}
 
-                {/* Items */}
                 <div className="pedido-items">
                   {pedido.items.map((item, index) => (
                     <div key={index} className="pedido-item">
@@ -650,13 +673,11 @@ export default function PedidosList() {
                   ))}
                 </div>
 
-                {/* Total */}
                 <div className="pedido-total">
                   <span>Total:</span>
                   <span>S/ {pedido.total.toFixed(2)}</span>
                 </div>
 
-                {/* Estados */}
                 {!pedido.cancelado && (
                   <div className="pedido-estados">
                     <span className={`estado-badge ${pedido.estado}`}>
@@ -668,10 +689,8 @@ export default function PedidosList() {
                   </div>
                 )}
 
-                {/* Acciones */}
                 {!pedido.cancelado && (
                   <div className="pedido-acciones">
-                    {/* Botones para cocina */}
                     {pedido.estado === 'pendiente' && (
                       <ProtectedAction permisos={['cocina.actualizar']}>
                         <button 
@@ -695,7 +714,6 @@ export default function PedidosList() {
                       </ProtectedAction>
                     )}
 
-                    {/* Botón para cobrar */}
                     {pedido.estado === 'completado' && pedido.estadoPago === 'pendiente' && (
                       <ProtectedAction permisos={['caja.cobrar']}>
                         <button 
@@ -714,11 +732,17 @@ export default function PedidosList() {
                       </ProtectedAction>
                     )}
 
-                    {/* Botones de edición y cancelación (SOLO PARA PENDIENTES) */}
                     {pedido.estado === 'pendiente' && pedido.estadoPago === 'pendiente' && (
                       <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: '1fr 1fr', 
+                        gridTemplateColumns: (() => {
+                          const tienePermiso = authAPI.hasPermission('creditos.crear');
+                          console.log('=== RENDERIZANDO BOTONES ===');
+                          console.log('¿Tiene permiso creditos.crear?', tienePermiso);
+                          console.log('Columnas:', tienePermiso ? '1fr 1fr 1fr' : '1fr 1fr');
+                          console.log('============================');
+                          return tienePermiso ? '1fr 1fr 1fr' : '1fr 1fr';
+                        })(),
                         gap: '0.5rem',
                         marginTop: '0.5rem' 
                       }}>
@@ -757,6 +781,34 @@ export default function PedidosList() {
                           <XCircle size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
                           Cancelar
                         </button>
+
+                        {(() => {
+                          const tienePermiso = authAPI.hasPermission('creditos.crear');
+                          console.log('Evaluando renderizado botón Fiar. Tiene permiso:', tienePermiso);
+                          
+                          if (tienePermiso) {
+                            return (
+                              <button 
+                                className="btn-accion btn-fiar"
+                                onClick={() => handleMarcarComoCredito(pedido._id)}
+                                style={{
+                                  background: '#fef3c7',
+                                  color: '#92400e',
+                                  padding: '0.75rem',
+                                  fontSize: '0.875rem',
+                                  border: 'none',
+                                  borderRadius: '0.5rem',
+                                  cursor: 'pointer',
+                                  fontWeight: '600'
+                                }}
+                              >
+                                💳 Fiar
+                              </button>
+                            );
+                          }
+                          console.log('No se renderiza botón Fiar (sin permiso)');
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>
@@ -773,7 +825,6 @@ export default function PedidosList() {
         </div>
       </main>
 
-      {/* Modal */}
       {modalOpen && (
         <PedidoModal
           isOpen={modalOpen}
