@@ -23,16 +23,6 @@ export default function PedidosList() {
     cargarUsuarios();
   }, [filtroFecha, fechaPersonalizada]);
 
-  // LOG DE DEBUG
-  useEffect(() => {
-    const user = authAPI.getCurrentUser();
-    console.log('=== DEBUG INICIAL ===');
-    console.log('Usuario completo:', user);
-    console.log('Permisos del rol:', user?.rol?.permisos);
-    console.log('¿Tiene creditos.crear?', authAPI.hasPermission('creditos.crear'));
-    console.log('=====================');
-  }, []);
-
   const cargarUsuarios = async () => {
     try {
       const response = await fetch('https://restaurante-backend-a6o9.onrender.com/api/usuarios');
@@ -735,14 +725,7 @@ export default function PedidosList() {
                     {pedido.estado === 'pendiente' && pedido.estadoPago === 'pendiente' && (
                       <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: (() => {
-                          const tienePermiso = authAPI.hasPermission('creditos.crear');
-                          console.log('=== RENDERIZANDO BOTONES ===');
-                          console.log('¿Tiene permiso creditos.crear?', tienePermiso);
-                          console.log('Columnas:', tienePermiso ? '1fr 1fr 1fr' : '1fr 1fr');
-                          console.log('============================');
-                          return tienePermiso ? '1fr 1fr 1fr' : '1fr 1fr';
-                        })(),
+                        gridTemplateColumns: authAPI.hasPermission('creditos.crear') ? '1fr 1fr 1fr' : '1fr 1fr',
                         gap: '0.5rem',
                         marginTop: '0.5rem' 
                       }}>
@@ -782,33 +765,24 @@ export default function PedidosList() {
                           Cancelar
                         </button>
 
-                        {(() => {
-                          const tienePermiso = authAPI.hasPermission('creditos.crear');
-                          console.log('Evaluando renderizado botón Fiar. Tiene permiso:', tienePermiso);
-                          
-                          if (tienePermiso) {
-                            return (
-                              <button 
-                                className="btn-accion btn-fiar"
-                                onClick={() => handleMarcarComoCredito(pedido._id)}
-                                style={{
-                                  background: '#fef3c7',
-                                  color: '#92400e',
-                                  padding: '0.75rem',
-                                  fontSize: '0.875rem',
-                                  border: 'none',
-                                  borderRadius: '0.5rem',
-                                  cursor: 'pointer',
-                                  fontWeight: '600'
-                                }}
-                              >
-                                💳 Fiar
-                              </button>
-                            );
-                          }
-                          console.log('No se renderiza botón Fiar (sin permiso)');
-                          return null;
-                        })()}
+                        {authAPI.hasPermission('creditos.crear') && (
+                          <button 
+                            className="btn-accion btn-fiar"
+                            onClick={() => handleMarcarComoCredito(pedido._id)}
+                            style={{
+                              background: '#fef3c7',
+                              color: '#92400e',
+                              padding: '0.75rem',
+                              fontSize: '0.875rem',
+                              border: 'none',
+                              borderRadius: '0.5rem',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            💳 Fiar
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
