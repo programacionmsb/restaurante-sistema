@@ -22,6 +22,15 @@ const PERMISOS_DISPONIBLES = {
   'caja.ver_totales': 'Ver totales del día',
   'caja.exportar': 'Exportar reportes',
   
+  // ========== CRÉDITOS (NUEVO) ========== 
+  'creditos.ver_propios': 'Ver solo créditos propios',
+  'creditos.ver_todos': 'Ver todos los créditos del restaurante',
+  'creditos.crear': 'Autorizar créditos/fiados',
+  'creditos.cobrar_propios': 'Cobrar solo créditos propios',
+  'creditos.cobrar_todos': 'Cobrar cualquier crédito',
+  'creditos.ver_reportes': 'Ver reportes de créditos',
+  // ========== FIN CRÉDITOS ========== 
+  
   // PLATOS
   'platos.ver': 'Ver catálogo de platos',
   'platos.crear': 'Crear nuevos platos',

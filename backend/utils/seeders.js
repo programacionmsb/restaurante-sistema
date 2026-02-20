@@ -24,6 +24,7 @@ const crearRolesPredefinidos = async () => {
             'clientes.ver', 'clientes.crear',
             'pedidos.ver_propios', 'pedidos.crear', 'pedidos.editar',
             'caja.cobrar',
+            'creditos.ver_propios', 'creditos.cobrar_propios',  // ← NUEVO
             'platos.ver', 'platos.ver_precios',
             'menu.ver'
           ],
@@ -47,11 +48,28 @@ const crearRolesPredefinidos = async () => {
           permisos: [
             'caja.cobrar', 'caja.ver_reportes', 'caja.ver_totales',
             'pedidos.ver_todos',
+            'creditos.ver_todos', 'creditos.cobrar_todos', 'creditos.ver_reportes',  // ← NUEVO
             'reportes.ventas'
           ],
           esPredefinido: true,
           color: '#ef4444'
+        },
+        // ========== ROL NUEVO: MESERO SENIOR ========== 
+        {
+          nombre: 'Mesero Senior',
+          descripcion: 'Mesero con permisos para autorizar créditos',
+          permisos: [
+            'clientes.ver', 'clientes.crear',
+            'pedidos.ver_propios', 'pedidos.crear', 'pedidos.editar',
+            'caja.cobrar',
+            'creditos.ver_propios', 'creditos.crear', 'creditos.cobrar_propios',  // ← NUEVO (con crear)
+            'platos.ver', 'platos.ver_precios',
+            'menu.ver'
+          ],
+          esPredefinido: true,
+          color: '#8b5cf6'
         }
+        // ========== FIN ROL NUEVO ========== 
       ];
       
       await Rol.insertMany(rolesPredefinidos);

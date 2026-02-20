@@ -27,6 +27,7 @@ app.use('/api/usuarios', require('./routes/usuarios'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/menu-dia', require('./routes/menuDia'));
 app.use('/api/cierres-turno', require('./routes/cierresTurno'));
+app.use('/api/creditos', require('./routes/creditos'));  // ← NUEVA LÍNEA
 
 // Ruta principal
 app.get('/', (req, res) => {
