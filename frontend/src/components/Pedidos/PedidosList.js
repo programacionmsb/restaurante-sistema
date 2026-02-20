@@ -780,7 +780,7 @@ export default function PedidosList() {
                               fontWeight: '600'
                             }}
                           >
-                            💳 Fiar
+                            💳 Crédito
                           </button>
                         )}
                       </div>
