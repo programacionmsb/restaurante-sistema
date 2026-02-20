@@ -37,12 +37,12 @@ const pedidoSchema = new mongoose.Schema({
   },
   estadoPago: {
     type: String,
-    enum: ['pendiente', 'pagado', 'credito', 'pagado_parcial'],  // ← MODIFICADO
+    enum: ['pendiente', 'pagado', 'credito', 'pagado_parcial'],
     default: 'pendiente'
   },
   metodoPago: {
     type: String,
-    enum: ['efectivo', 'yape', 'transferencia'],
+    enum: ['efectivo', 'yape', 'transferencia', null],  // ← CORREGIDO: agregado null al enum
     default: null
   },
   // ========== NUEVOS CAMPOS PARA CRÉDITOS ========== 
