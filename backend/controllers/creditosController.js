@@ -56,7 +56,10 @@ exports.getClientesConDeuda = async (req, res) => {
     // Convertir a array y ordenar por deuda
     const clientes = Object.values(clientesMap).sort((a, b) => b.totalDeuda - a.totalDeuda);
 
-    res.json(clientes);
+    // Asegurar que sea un array válido
+    const clientesArray = Array.isArray(clientes) ? clientes : Array.from(clientes);
+
+    res.json(clientesArray);
   } catch (error) {
     console.error('Error obteniendo clientes con deuda:', error);
     res.status(500).json({ error: error.message });
