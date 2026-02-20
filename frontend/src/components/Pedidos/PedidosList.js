@@ -86,7 +86,8 @@ export default function PedidosList() {
 
   const handleRegistrarPago = async (id, metodoPago) => {
     try {
-      await pedidosAPI.registrarPago(id, metodoPago);
+      const usuario = authAPI.getCurrentUser();
+      await pedidosAPI.registrarPago(id, metodoPago, usuario._id);
       cargarPedidosPorFecha();
     } catch (error) {
       alert(error.message);
@@ -115,38 +116,6 @@ export default function PedidosList() {
     if (window.confirm(`¿Está seguro de cancelar este pedido?\nMotivo: ${motivo}`)) {
       try {
         await pedidosAPI.cancelar(id, motivo, nombreUsuario);
-        cargarPedidosPorFecha();
-      } catch (error) {
-        alert(error.message);
-      }
-    }
-  };
-
-  const handleMarcarComoCredito = async (pedidoId) => {
-    const clienteNombre = prompt('Nombre del cliente (para el crédito):');
-    if (!clienteNombre || clienteNombre.trim() === '') {
-      alert('Debe ingresar el nombre del cliente');
-      return;
-    }
-
-    const clienteTelefono = prompt('Teléfono del cliente (opcional):');
-    const notas = prompt('Notas adicionales (opcional):');
-
-    const usuario = authAPI.getCurrentUser();
-    
-    if (window.confirm(`¿Marcar este pedido como crédito para "${clienteNombre}"?`)) {
-      try {
-        const { creditosAPI } = await import('../../services/apiCreditos');
-        
-        await creditosAPI.crearCredito({
-          pedidoId,
-          clienteNombre,
-          clienteTelefono: clienteTelefono || '',
-          notas: notas || '',
-          usuarioId: usuario._id
-        });
-        
-        alert('✅ Pedido marcado como crédito exitosamente');
         cargarPedidosPorFecha();
       } catch (error) {
         alert(error.message);
@@ -674,7 +643,7 @@ export default function PedidosList() {
                       {getEstadoLabel(pedido.estado)}
                     </span>
                     <span className={`estado-badge pago-${pedido.estadoPago}`}>
-                      {pedido.estadoPago === 'pagado' ? 'Pagado' : 'Por Cobrar'}
+                      {pedido.estadoPago === 'pagado' ? 'Pagado' : pedido.estadoPago === 'credito' ? 'A Crédito' : 'Por Cobrar'}
                     </span>
                   </div>
                 )}
@@ -709,10 +678,32 @@ export default function PedidosList() {
                         <button 
                           className="btn-accion btn-cobrar"
                           onClick={() => {
-                            const metodo = prompt('Método de pago:\n1. Efectivo\n2. Yape\n3. Transferencia', '1');
-                            const metodos = { '1': 'efectivo', '2': 'yape', '3': 'transferencia' };
+                            const tienePermisoCredito = authAPI.hasPermission('creditos.crear');
+                            const opciones = tienePermisoCredito 
+                              ? 'Método de pago:\n1. Efectivo\n2. Yape\n3. Transferencia\n4. Crédito'
+                              : 'Método de pago:\n1. Efectivo\n2. Yape\n3. Transferencia';
+                            
+                            const metodo = prompt(opciones, '1');
+                            const metodos = { 
+                              '1': 'efectivo', 
+                              '2': 'yape', 
+                              '3': 'transferencia',
+                              '4': 'credito'
+                            };
+                            
                             if (metodos[metodo]) {
-                              handleRegistrarPago(pedido._id, metodos[metodo]);
+                              if (metodo === '4' && !tienePermisoCredito) {
+                                alert('No tienes permiso para autorizar créditos');
+                                return;
+                              }
+                              
+                              if (metodo === '4') {
+                                if (window.confirm(`¿Marcar pedido de "${pedido.cliente}" como crédito?`)) {
+                                  handleRegistrarPago(pedido._id, metodos[metodo]);
+                                }
+                              } else {
+                                handleRegistrarPago(pedido._id, metodos[metodo]);
+                              }
                             }
                           }}
                         >
@@ -725,7 +716,7 @@ export default function PedidosList() {
                     {pedido.estado === 'pendiente' && pedido.estadoPago === 'pendiente' && (
                       <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: authAPI.hasPermission('creditos.crear') ? '1fr 1fr 1fr' : '1fr 1fr',
+                        gridTemplateColumns: '1fr 1fr',
                         gap: '0.5rem',
                         marginTop: '0.5rem' 
                       }}>
@@ -764,25 +755,6 @@ export default function PedidosList() {
                           <XCircle size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
                           Cancelar
                         </button>
-
-                        {authAPI.hasPermission('creditos.crear') && (
-                          <button 
-                            className="btn-accion btn-fiar"
-                            onClick={() => handleMarcarComoCredito(pedido._id)}
-                            style={{
-                              background: '#fef3c7',
-                              color: '#92400e',
-                              padding: '0.75rem',
-                              fontSize: '0.875rem',
-                              border: 'none',
-                              borderRadius: '0.5rem',
-                              cursor: 'pointer',
-                              fontWeight: '600'
-                            }}
-                          >
-                            💳 Crédito
-                          </button>
-                        )}
                       </div>
                     )}
                   </div>

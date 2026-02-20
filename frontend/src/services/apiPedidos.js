@@ -131,12 +131,12 @@ export const pedidosAPI = {
     return await response.json();
   },
 
-  // Registrar pago (caja)
-  registrarPago: async (id, metodoPago) => {
+  // Registrar pago (caja) - MODIFICADO para incluir usuarioId
+  registrarPago: async (id, metodoPago, usuarioId) => {
     const response = await fetch(`${API_URL}/pedidos/${id}/pago`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estadoPago: 'pagado', metodoPago })
+      body: JSON.stringify({ metodoPago, usuarioId })
     });
     if (!response.ok) {
       const error = await response.json();

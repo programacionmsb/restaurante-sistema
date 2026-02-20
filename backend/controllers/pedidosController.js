@@ -1,5 +1,6 @@
 const Pedido = require('../models/Pedido');
 const Usuario = require('../models/Usuario');
+const Cliente = require('../models/Cliente');
 const mongoose = require('mongoose');
 const { emitirActualizacion } = require('../utils/helpers');
 
@@ -127,19 +128,65 @@ exports.actualizarEstado = async (req, res) => {
 
 exports.registrarPago = async (req, res) => {
   try {
-    const { metodoPago } = req.body;
+    const { metodoPago, usuarioId } = req.body;
     const pedido = await Pedido.findById(req.params.id);
     
     if (!pedido) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
 
-    pedido.estadoPago = 'pagado';
-    pedido.metodoPago = metodoPago;
-    
-    await pedido.save();
-    emitirActualizacion('pedido-pagado', pedido);
-    res.json(pedido);
+    // Si el método de pago es "credito"
+    if (metodoPago === 'credito') {
+      // Verificar que el usuario tenga permiso para crear créditos
+      const usuario = await Usuario.findById(usuarioId).populate('rol');
+      
+      if (!usuario) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      if (!usuario.rol.permisos.includes('creditos.crear')) {
+        return res.status(403).json({ error: 'No tienes permiso para autorizar créditos' });
+      }
+
+      // Buscar datos del cliente en la BD
+      let clienteTelefono = '';
+      try {
+        const cliente = await Cliente.findOne({ nombre: pedido.cliente });
+        if (cliente && cliente.telefono) {
+          clienteTelefono = cliente.telefono;
+        }
+      } catch (err) {
+        console.log('No se pudo obtener teléfono del cliente:', err);
+      }
+
+      // Marcar como crédito con datos del cliente del pedido
+      pedido.estadoPago = 'credito';
+      pedido.metodoPago = null;
+      pedido.montoRestante = pedido.total;
+      pedido.credito = {
+        clienteNombre: pedido.cliente,
+        clienteTelefono: clienteTelefono,
+        notas: '',
+        fechaCredito: new Date(),
+        autorizadoPor: {
+          _id: usuario._id,
+          nombre: usuario.nombre,
+          usuario: usuario.usuario
+        }
+      };
+
+      await pedido.save();
+      emitirActualizacion('credito-creado', pedido);
+      res.json(pedido);
+    } else {
+      // Pago normal (efectivo, yape, transferencia)
+      pedido.estadoPago = 'pagado';
+      pedido.metodoPago = metodoPago;
+      
+      await pedido.save();
+      emitirActualizacion('pedido-pagado', pedido);
+      res.json(pedido);
+    }
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
