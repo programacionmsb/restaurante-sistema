@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Calendar, Download, DollarSign, ShoppingCart, Clock, Award, XCircle, Tag, FileText } from 'lucide-react';
+import { TrendingUp, Calendar, Download, DollarSign, ShoppingCart, Clock, Award, XCircle, Tag, FileText, CreditCard } from 'lucide-react';
 import { pedidosAPI } from '../../services/apiPedidos';
+import { creditosAPI } from '../../services/apiCreditos';
+import { authAPI } from '../../services/apiAuth';
 import './reportes.css';
 
 export default function ReportesView() {
   const [pedidos, setPedidos] = useState([]);
+  const [reporteCreditos, setReporteCreditos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filtroFecha, setFiltroFecha] = useState('hoy');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
 
+  const usuario = authAPI.getCurrentUser();
+  const permisos = usuario?.rol?.permisos || [];
+
   useEffect(() => {
-    cargarPedidos();
+    cargarDatos();
   }, [filtroFecha, fechaInicio, fechaFin]);
 
-  const cargarPedidos = async () => {
+  const cargarDatos = async () => {
     setLoading(true);
     try {
+      // Cargar pedidos
       let data;
       
       if (filtroFecha === 'hoy') {
@@ -48,6 +55,16 @@ export default function ReportesView() {
       }
       
       setPedidos(data);
+
+      // Cargar reporte de créditos
+      try {
+        const creditosData = await creditosAPI.getReporteCreditos(usuario._id, permisos);
+        setReporteCreditos(creditosData);
+      } catch (err) {
+        console.error('Error cargando créditos:', err);
+        setReporteCreditos(null);
+      }
+      
     } catch (error) {
       console.error('Error:', error);
       alert('Error al cargar datos');
@@ -71,10 +88,11 @@ export default function ReportesView() {
   const enPreparacion = pedidosActivos.filter(p => p.estado === 'en_preparacion').length;
   const completados = pedidosActivos.filter(p => p.estado === 'completado').length;
 
-  // Por método de pago - CAMBIADO: tarjeta → yape
+  // Por método de pago
   const porEfectivo = pedidosActivos.filter(p => p.estadoPago === 'pagado' && p.metodoPago === 'efectivo').reduce((sum, p) => sum + p.total, 0);
   const porYape = pedidosActivos.filter(p => p.estadoPago === 'pagado' && p.metodoPago === 'yape').reduce((sum, p) => sum + p.total, 0);
   const porTransferencia = pedidosActivos.filter(p => p.estadoPago === 'pagado' && p.metodoPago === 'transferencia').reduce((sum, p) => sum + p.total, 0);
+  const porCredito = pedidosActivos.filter(p => p.estadoPago === 'credito').reduce((sum, p) => sum + p.total, 0);
 
   // Productos más vendidos
   const productosVendidos = {};
@@ -89,7 +107,6 @@ export default function ReportesView() {
       }
       productosVendidos[item.nombre].cantidad += item.cantidad;
       
-      // Calcular precio con descuento si aplica
       let precioItem = item.cantidad * item.precio;
       if (item.descuento && item.descuento > 0) {
         if (item.tipoDescuento === 'porcentaje') {
@@ -136,19 +153,27 @@ export default function ReportesView() {
     { name: 'Completados', value: completados, color: '#10b981' }
   ].filter(item => item.value > 0);
 
-  // Datos para gráfico de métodos de pago - CAMBIADO: tarjeta → yape
+  // Datos para gráfico de métodos de pago (incluye crédito)
   const dataPorMetodo = [
     { name: 'Efectivo', value: porEfectivo, color: '#10b981' },
     { name: 'Yape', value: porYape, color: '#3b82f6' },
-    { name: 'Transferencia', value: porTransferencia, color: '#8b5cf6' }
+    { name: 'Transferencia', value: porTransferencia, color: '#8b5cf6' },
+    { name: 'Crédito', value: porCredito, color: '#f59e0b' }
   ].filter(item => item.value > 0);
+
+  // Datos para gráfico de créditos por antigüedad
+  const dataCreditosAntiguedad = reporteCreditos ? [
+    { name: '0-7 días', value: reporteCreditos.porAntiguedad.hasta7dias, color: '#10b981' },
+    { name: '8-30 días', value: reporteCreditos.porAntiguedad.de8a30dias, color: '#f59e0b' },
+    { name: '+30 días', value: reporteCreditos.porAntiguedad.mas30dias, color: '#ef4444' }
+  ].filter(item => item.value > 0) : [];
 
   // Tiempos de preparación
   const pedidosConTiempo = pedidosActivos.filter(p => p.inicioPreparacion && p.finPreparacion);
   const tiemposPreparacion = pedidosConTiempo.map(p => {
     const inicio = new Date(p.inicioPreparacion);
     const fin = new Date(p.finPreparacion);
-    return Math.floor((fin - inicio) / 1000 / 60); // en minutos
+    return Math.floor((fin - inicio) / 1000 / 60);
   });
 
   const tiempoPromedioPrep = tiemposPreparacion.length > 0
@@ -159,7 +184,6 @@ export default function ReportesView() {
   const tiempoMaxPrep = tiemposPreparacion.length > 0 ? Math.max(...tiemposPreparacion) : 0;
 
   const exportarExcel = () => {
-    // Crear CSV con punto y coma como separador (compatible con Excel español) - CAMBIADO: tarjeta → yape
     let csv = 'Fecha;Mesa;Cliente;Estado;Estado Pago;Método Pago;Total;Descuentos\n';
     
     pedidosActivos.forEach(p => {
@@ -167,21 +191,19 @@ export default function ReportesView() {
       const estado = p.estado === 'pendiente' ? 'Pendiente' : 
                      p.estado === 'en_preparacion' ? 'En Preparación' : 
                      p.estado === 'completado' ? 'Completado' : p.estado;
-      const estadoPago = p.estadoPago === 'pagado' ? 'Pagado' : 'Por Cobrar';
+      const estadoPago = p.estadoPago === 'pagado' ? 'Pagado' : p.estadoPago === 'credito' ? 'Crédito' : 'Por Cobrar';
       const metodoPago = p.metodoPago ? 
                          (p.metodoPago === 'efectivo' ? 'Efectivo' : 
                           p.metodoPago === 'yape' ? 'Yape' : 
                           p.metodoPago === 'transferencia' ? 'Transferencia' : p.metodoPago) 
-                         : '-';
+                         : (p.estadoPago === 'credito' ? 'Crédito' : '-');
       
       csv += `${fecha};${p.mesa};${p.cliente};${estado};${estadoPago};${metodoPago};${p.total.toFixed(2)};${(p.totalDescuentos || 0).toFixed(2)}\n`;
     });
 
-    // Crear BOM para UTF-8 (para que Excel reconozca correctamente los caracteres especiales)
     const BOM = '\uFEFF';
     const csvConBOM = BOM + csv;
 
-    // Descargar
     const blob = new Blob([csvConBOM], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -197,7 +219,6 @@ export default function ReportesView() {
     const fechaReporte = new Date().toLocaleDateString('es-PE');
     const horaReporte = new Date().toLocaleTimeString('es-PE');
     
-    // Crear contenido HTML para el PDF - CAMBIADO: tarjeta → yape
     let contenidoHTML = `
       <!DOCTYPE html>
       <html>
@@ -281,17 +302,6 @@ export default function ReportesView() {
             border-bottom: 1px solid #f3f4f6;
             font-size: 12px;
           }
-          .top-productos {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-          }
-          .producto-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f3f4f6;
-          }
           .footer {
             margin-top: 40px;
             text-align: center;
@@ -299,10 +309,6 @@ export default function ReportesView() {
             color: #9ca3af;
             border-top: 1px solid #e5e7eb;
             padding-top: 15px;
-          }
-          @media print {
-            .kpis { grid-template-columns: repeat(2, 1fr); }
-            .top-productos { grid-template-columns: 1fr; }
           }
         </style>
       </head>
@@ -324,130 +330,52 @@ export default function ReportesView() {
             <div class="kpi-value">S/ ${ticketPromedio.toFixed(2)}</div>
             <div class="kpi-sublabel">Por pedido</div>
           </div>
+          ${reporteCreditos ? `
           <div class="kpi">
-            <div class="kpi-label">Pedidos Completados</div>
-            <div class="kpi-value">${completados}</div>
-            <div class="kpi-sublabel">${((completados / pedidosActivos.length) * 100 || 0).toFixed(1)}% del total</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Tiempo Promedio</div>
-            <div class="kpi-value">${tiempoPromedioPrep.toFixed(1)} min</div>
-            <div class="kpi-sublabel">De preparación</div>
-          </div>
-          ${totalDescuentos > 0 ? `
-          <div class="kpi">
-            <div class="kpi-label">Descuentos</div>
-            <div class="kpi-value" style="color: #ef4444;">S/ ${totalDescuentos.toFixed(2)}</div>
-            <div class="kpi-sublabel">${((totalDescuentos / ventasBrutas) * 100).toFixed(1)}% de ventas brutas</div>
-          </div>
-          ` : ''}
-          ${pedidosCancelados.length > 0 ? `
-          <div class="kpi">
-            <div class="kpi-label">Cancelados</div>
-            <div class="kpi-value" style="color: #6b7280;">${pedidosCancelados.length}</div>
-            <div class="kpi-sublabel">${((pedidosCancelados.length / pedidos.length) * 100).toFixed(1)}% del total</div>
+            <div class="kpi-label" style="color: #f59e0b;">Créditos por Cobrar</div>
+            <div class="kpi-value" style="color: #f59e0b;">S/ ${reporteCreditos.resumen.totalDeuda.toFixed(2)}</div>
+            <div class="kpi-sublabel">${reporteCreditos.resumen.cantidadClientes} clientes</div>
           </div>
           ` : ''}
         </div>
 
+        ${reporteCreditos && reporteCreditos.resumen.totalDeuda > 0 ? `
         <div class="section">
-          <h2>💰 Métodos de Pago</h2>
+          <h2>💳 Créditos por Cobrar</h2>
           <table>
             <thead>
               <tr>
-                <th>Método</th>
-                <th>Cantidad</th>
-                <th>Total</th>
+                <th>Categoría</th>
+                <th>Monto</th>
                 <th>Porcentaje</th>
               </tr>
             </thead>
             <tbody>
-              ${porEfectivo > 0 ? `
+              ${reporteCreditos.porAntiguedad.hasta7dias > 0 ? `
               <tr>
-                <td>💵 Efectivo</td>
-                <td>${pedidosActivos.filter(p => p.metodoPago === 'efectivo').length}</td>
-                <td><strong>S/ ${porEfectivo.toFixed(2)}</strong></td>
-                <td>${((porEfectivo / totalVentas) * 100).toFixed(1)}%</td>
+                <td>0-7 días (reciente)</td>
+                <td><strong>S/ ${reporteCreditos.porAntiguedad.hasta7dias.toFixed(2)}</strong></td>
+                <td>${((reporteCreditos.porAntiguedad.hasta7dias / reporteCreditos.resumen.totalDeuda) * 100).toFixed(1)}%</td>
               </tr>
               ` : ''}
-              ${porYape > 0 ? `
+              ${reporteCreditos.porAntiguedad.de8a30dias > 0 ? `
               <tr>
-                <td>📱 Yape</td>
-                <td>${pedidosActivos.filter(p => p.metodoPago === 'yape').length}</td>
-                <td><strong>S/ ${porYape.toFixed(2)}</strong></td>
-                <td>${((porYape / totalVentas) * 100).toFixed(1)}%</td>
+                <td>8-30 días</td>
+                <td><strong>S/ ${reporteCreditos.porAntiguedad.de8a30dias.toFixed(2)}</strong></td>
+                <td>${((reporteCreditos.porAntiguedad.de8a30dias / reporteCreditos.resumen.totalDeuda) * 100).toFixed(1)}%</td>
               </tr>
               ` : ''}
-              ${porTransferencia > 0 ? `
-              <tr>
-                <td>🏦 Transferencia</td>
-                <td>${pedidosActivos.filter(p => p.metodoPago === 'transferencia').length}</td>
-                <td><strong>S/ ${porTransferencia.toFixed(2)}</strong></td>
-                <td>${((porTransferencia / totalVentas) * 100).toFixed(1)}%</td>
+              ${reporteCreditos.porAntiguedad.mas30dias > 0 ? `
+              <tr style="background: #fee2e2;">
+                <td><strong>+30 días (antiguo)</strong></td>
+                <td><strong style="color: #ef4444;">S/ ${reporteCreditos.porAntiguedad.mas30dias.toFixed(2)}</strong></td>
+                <td>${((reporteCreditos.porAntiguedad.mas30dias / reporteCreditos.resumen.totalDeuda) * 100).toFixed(1)}%</td>
               </tr>
               ` : ''}
             </tbody>
           </table>
         </div>
-
-        <div class="section">
-          <h2>🏆 Top 10 Productos por Ingresos</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Producto</th>
-                <th>Cantidad Vendida</th>
-                <th>Ingresos</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${topProductosIngresos.map((p, i) => `
-                <tr>
-                  <td><strong>#${i + 1}</strong></td>
-                  <td>${p.nombre}</td>
-                  <td>${p.cantidad} unidades</td>
-                  <td><strong>S/ ${p.ingresos.toFixed(2)}</strong></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <h2>📋 Detalle de Pedidos</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha/Hora</th>
-                <th>Mesa</th>
-                <th>Cliente</th>
-                <th>Estado</th>
-                <th>Pago</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${pedidosActivos.slice(0, 50).map(p => `
-                <tr>
-                  <td>${new Date(p.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-                  <td>${p.mesa}</td>
-                  <td>${p.cliente}</td>
-                  <td>${p.estado === 'pendiente' ? 'Pendiente' : p.estado === 'en_preparacion' ? 'En Preparación' : 'Completado'}</td>
-                  <td>${p.estadoPago === 'pagado' ? '✅ Pagado' : '⏳ Pendiente'}</td>
-                  <td><strong>S/ ${p.total.toFixed(2)}</strong></td>
-                </tr>
-              `).join('')}
-              ${pedidosActivos.length > 50 ? `
-                <tr>
-                  <td colspan="6" style="text-align: center; font-style: italic; color: #9ca3af;">
-                    ... y ${pedidosActivos.length - 50} pedidos más
-                  </td>
-                </tr>
-              ` : ''}
-            </tbody>
-          </table>
-        </div>
+        ` : ''}
 
         <div class="footer">
           <p>RestaurantePRO - Sistema de Gestión Integral</p>
@@ -457,12 +385,10 @@ export default function ReportesView() {
       </html>
     `;
 
-    // Abrir ventana de impresión
     const ventana = window.open('', '_blank');
     ventana.document.write(contenidoHTML);
     ventana.document.close();
     
-    // Esperar a que cargue y luego imprimir
     setTimeout(() => {
       ventana.print();
     }, 500);
@@ -654,6 +580,19 @@ export default function ReportesView() {
             </div>
           </div>
 
+          {reporteCreditos && reporteCreditos.resumen.totalDeuda > 0 && (
+            <div className="kpi-card" style={{ borderColor: '#f59e0b' }}>
+              <div className="kpi-icon" style={{ background: '#fef3c7' }}>
+                <CreditCard size={32} color="#f59e0b" />
+              </div>
+              <div className="kpi-content">
+                <div className="kpi-label">Créditos por Cobrar</div>
+                <div className="kpi-value" style={{ color: '#f59e0b' }}>S/ {reporteCreditos.resumen.totalDeuda.toFixed(2)}</div>
+                <div className="kpi-sublabel">{reporteCreditos.resumen.cantidadClientes} cliente{reporteCreditos.resumen.cantidadClientes !== 1 ? 's' : ''}</div>
+              </div>
+            </div>
+          )}
+
           {totalDescuentos > 0 && (
             <div className="kpi-card" style={{ borderColor: '#ef4444' }}>
               <div className="kpi-icon" style={{ background: '#fee2e2' }}>
@@ -744,6 +683,32 @@ export default function ReportesView() {
                     ))}
                   </Bar>
                 </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Créditos por Antigüedad */}
+          {dataCreditosAntiguedad.length > 0 && (
+            <div className="grafico-card">
+              <h3>Créditos por Antigüedad</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={dataCreditosAntiguedad}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {dataCreditosAntiguedad.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `S/ ${value.toFixed(2)}`} />
+                </PieChart>
               </ResponsiveContainer>
             </div>
           )}
