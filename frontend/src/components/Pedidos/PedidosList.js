@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus } from 'lucide-react';
+import { ShoppingCart, Plus, RefreshCw } from 'lucide-react';
 import { pedidosAPI } from '../../services/apiPedidos';
 import { authAPI } from '../../services/apiAuth';
 import PedidoModal from './PedidoModal';
@@ -22,7 +22,7 @@ export default function PedidosList() {
 
   // Custom hooks
   const { pedidos, loading, cargarPedidosPorFecha } = usePedidos(filtroFecha, fechaPersonalizada);
-  useSocketPedidos(cargarPedidosPorFecha);
+  const { actualizacionesPendientes } = useSocketPedidos(cargarPedidosPorFecha, modalOpen);
 
   // Handlers
   const handleUpdateEstado = async (id, nuevoEstado) => {
@@ -118,6 +118,44 @@ export default function PedidosList() {
       </header>
 
       <main className="pedidos-main">
+        {/* Indicador de actualizaciones pendientes */}
+        {actualizacionesPendientes && !modalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: '100px',
+            right: '20px',
+            background: '#fef3c7',
+            border: '2px solid #f59e0b',
+            borderRadius: '0.5rem',
+            padding: '1rem 1.5rem',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            zIndex: 1000,
+            animation: 'slideIn 0.3s ease'
+          }}>
+            <RefreshCw size={20} color="#f59e0b" style={{ animation: 'spin 2s linear infinite' }} />
+            <span style={{ fontWeight: '600', color: '#92400e' }}>
+              Hay actualizaciones disponibles
+            </span>
+            <button
+              onClick={cargarPedidosPorFecha}
+              style={{
+                background: '#f59e0b',
+                color: 'white',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.25rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Actualizar ahora
+            </button>
+          </div>
+        )}
+
         {/* Estadísticas */}
         <PedidosEstadisticas estadisticas={estadisticas} />
 
@@ -235,6 +273,24 @@ export default function PedidosList() {
           pedidoEditar={editingPedido}
         />
       )}
+
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

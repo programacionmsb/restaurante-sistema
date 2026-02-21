@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 
-export const useSocketPedidos = (onUpdate) => {
+export const useSocketPedidos = (onUpdate, modalOpen) => {
   const socketRef = useRef(null);
+  const [actualizacionesPendientes, setActualizacionesPendientes] = useState(false);
 
   useEffect(() => {
     socketRef.current = io('https://restaurante-backend-a6o9.onrender.com', {
@@ -24,7 +25,16 @@ export const useSocketPedidos = (onUpdate) => {
     eventos.forEach(evento => {
       socketRef.current.on(evento, (pedido) => {
         console.log(`🔔 ${evento}:`, pedido);
-        onUpdate();
+        
+        if (!modalOpen) {
+          // Modal cerrado: actualizar inmediatamente
+          onUpdate();
+          setActualizacionesPendientes(false);
+        } else {
+          // Modal abierto: marcar como pendiente
+          console.log('⏸️ Modal abierto, actualización en pausa');
+          setActualizacionesPendientes(true);
+        }
       });
     });
 
@@ -34,7 +44,16 @@ export const useSocketPedidos = (onUpdate) => {
         console.log('🔌 Socket desconectado');
       }
     };
-  }, [onUpdate]);
+  }, [onUpdate, modalOpen]);
 
-  return socketRef;
+  // Limpiar pendientes cuando se cierra el modal
+  useEffect(() => {
+    if (!modalOpen && actualizacionesPendientes) {
+      console.log('🔄 Modal cerrado, aplicando actualizaciones pendientes');
+      onUpdate();
+      setActualizacionesPendientes(false);
+    }
+  }, [modalOpen, actualizacionesPendientes, onUpdate]);
+
+  return { socketRef, actualizacionesPendientes };
 };
