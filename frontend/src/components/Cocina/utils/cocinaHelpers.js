@@ -7,18 +7,14 @@ export const formatTiempo = (segundos) => {
 
 const CATEGORIAS_COCINA = ['Entrada', 'Plato Principal'];
 
-// Determina si un item debe mostrarse en el resumen de cocina
 const esItemCocina = (item) => {
-  if (item.esMenuExpandido) {
-    return CATEGORIAS_COCINA.includes(item.categoria);
-  }
-  // Items normales (no de menú): mostrar todos
+  if (item.esMenuExpandido) return CATEGORIAS_COCINA.includes(item.categoria);
   return true;
 };
 
+// ========== ESTADÍSTICAS POR CLIENTE ==========
 export const calcularEstadisticasItems = (pedidos, filtroCliente = 'todos') => {
   const itemsMap = {};
-
   const pedidosFiltrados = filtroCliente === 'todos'
     ? pedidos
     : pedidos.filter(p => p.cliente === filtroCliente);
@@ -26,30 +22,53 @@ export const calcularEstadisticasItems = (pedidos, filtroCliente = 'todos') => {
   pedidosFiltrados.forEach(pedido => {
     pedido.items.forEach(item => {
       if (!esItemCocina(item)) return;
-
       const key = item.nombre;
       if (!itemsMap[key]) {
-        itemsMap[key] = {
-          nombre: item.nombre,
-          categoria: item.categoria || '',
-          totalPendiente: 0,
-          totalEnPreparacion: 0,
-          totalGeneral: 0
-        };
+        itemsMap[key] = { nombre: item.nombre, categoria: item.categoria || '', totalPendiente: 0, totalEnPreparacion: 0, totalGeneral: 0 };
       }
-
-      const cantidad = item.cantidad;
-      itemsMap[key].totalGeneral += cantidad;
-
-      if (pedido.estado === 'pendiente') {
-        itemsMap[key].totalPendiente += cantidad;
-      } else if (pedido.estado === 'en_preparacion') {
-        itemsMap[key].totalEnPreparacion += cantidad;
-      }
+      itemsMap[key].totalGeneral += item.cantidad;
+      if (pedido.estado === 'pendiente') itemsMap[key].totalPendiente += item.cantidad;
+      else if (pedido.estado === 'en_preparacion') itemsMap[key].totalEnPreparacion += item.cantidad;
     });
   });
 
   return Object.values(itemsMap).sort((a, b) => b.totalGeneral - a.totalGeneral);
+};
+
+// ========== ESTADÍSTICAS POR DESTINO ==========
+const getDestino = (mesa) => {
+  if (!mesa) return 'MESA';
+  if (mesa.startsWith('DELIVERY:')) return 'DELIVERY';
+  if (mesa.startsWith('OTRO:')) return 'OTRO';
+  return 'MESA';
+};
+
+export const calcularEstadisticasItemsPorDestino = (pedidos, filtroDestino = 'todos') => {
+  const itemsMap = {};
+  const pedidosFiltrados = filtroDestino === 'todos'
+    ? pedidos
+    : pedidos.filter(p => getDestino(p.mesa) === filtroDestino);
+
+  pedidosFiltrados.forEach(pedido => {
+    pedido.items.forEach(item => {
+      if (!esItemCocina(item)) return;
+      const key = item.nombre;
+      if (!itemsMap[key]) {
+        itemsMap[key] = { nombre: item.nombre, categoria: item.categoria || '', totalPendiente: 0, totalEnPreparacion: 0, totalGeneral: 0 };
+      }
+      itemsMap[key].totalGeneral += item.cantidad;
+      if (pedido.estado === 'pendiente') itemsMap[key].totalPendiente += item.cantidad;
+      else if (pedido.estado === 'en_preparacion') itemsMap[key].totalEnPreparacion += item.cantidad;
+    });
+  });
+
+  return Object.values(itemsMap).sort((a, b) => b.totalGeneral - a.totalGeneral);
+};
+
+export const calcularEstadisticasTipo = (pedidos) => {
+  const stats = { MESA: 0, DELIVERY: 0, OTRO: 0 };
+  pedidos.forEach(pedido => { stats[getDestino(pedido.mesa)] += 1; });
+  return stats;
 };
 
 export const obtenerClientesUnicos = (pedidos) => {
@@ -72,28 +91,8 @@ export const obtenerMeserosUnicos = (pedidos) => {
   const meserosMap = new Map();
   pedidos.forEach(pedido => {
     if (pedido.usuarioCreador && pedido.usuarioCreador._id) {
-      meserosMap.set(pedido.usuarioCreador._id, {
-        _id: pedido.usuarioCreador._id,
-        nombre: pedido.usuarioCreador.nombre
-      });
+      meserosMap.set(pedido.usuarioCreador._id, { _id: pedido.usuarioCreador._id, nombre: pedido.usuarioCreador.nombre });
     }
   });
   return Array.from(meserosMap.values());
-};
-
-export const calcularEstadisticasTipo = (pedidos) => {
-  const stats = { MESA: 0, DELIVERY: 0, OTRO: 0 };
-
-  pedidos.forEach(pedido => {
-    const mesa = pedido.mesa || '';
-    if (mesa.startsWith('DELIVERY:')) {
-      stats.DELIVERY += 1;
-    } else if (mesa.startsWith('OTRO:')) {
-      stats.OTRO += 1;
-    } else {
-      stats.MESA += 1;
-    }
-  });
-
-  return stats;
 };

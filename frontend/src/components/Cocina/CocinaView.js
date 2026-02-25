@@ -8,7 +8,7 @@ import { CocinaFiltros } from './components/CocinaFiltros';
 import { CocinaPedidoCard } from './components/CocinaPedidoCard';
 import {
   calcularEstadisticasItems,
-  calcularEstadisticasTipo,
+  calcularEstadisticasItemsPorDestino,
   filtrarPedidos,
   obtenerMeserosUnicos,
   obtenerClientesUnicos,
@@ -19,6 +19,7 @@ export default function CocinaView() {
   const [filtroMesero, setFiltroMesero] = useState('todos');
   const [busquedaCliente, setBusquedaCliente] = useState('');
   const [filtroCliente, setFiltroCliente] = useState('todos');
+  const [filtroDestino, setFiltroDestino] = useState('todos');
 
   const { pedidos, loading, tiempos, cargarPedidos } = useCocina();
   useSocketCocina(cargarPedidos);
@@ -46,12 +47,10 @@ export default function CocinaView() {
   const pedidosPendientes = pedidosFiltrados.filter(p => p.estado === 'pendiente').length;
   const pedidosEnPreparacion = pedidosFiltrados.filter(p => p.estado === 'en_preparacion').length;
 
-  // Estadísticas con filtro de cliente aplicado
   const itemsStats = calcularEstadisticasItems(pedidosFiltrados, filtroCliente);
+  const itemsStatsPorDestino = calcularEstadisticasItemsPorDestino(pedidosFiltrados, filtroDestino);
 
-  // Clientes únicos de los pedidos filtrados
   const clientes = obtenerClientesUnicos(pedidosFiltrados);
-  const statsTipo = calcularEstadisticasTipo(pedidosFiltrados);
   const meseros = obtenerMeserosUnicos(pedidos);
 
   if (loading) {
@@ -86,7 +85,9 @@ export default function CocinaView() {
           clientes={clientes}
           filtroCliente={filtroCliente}
           onCambiarFiltroCliente={setFiltroCliente}
-          statsTipo={statsTipo}
+          itemsStatsPorDestino={itemsStatsPorDestino}
+          filtroDestino={filtroDestino}
+          onCambiarFiltroDestino={setFiltroDestino}
         />
 
         <CocinaFiltros
