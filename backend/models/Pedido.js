@@ -28,7 +28,21 @@ const pedidoSchema = new mongoose.Schema({
     observaciones: {
       type: String,
       default: ''
+    },
+    // ===== CAMPOS PARA EXPANSIÓN DE MENÚ =====
+    categoria: {
+      type: String,
+      default: ''
+    },
+    menuNombre: {
+      type: String,
+      default: ''
+    },
+    esMenuExpandido: {
+      type: Boolean,
+      default: false
     }
+    // ===== FIN CAMPOS MENÚ =====
   }],
   estado: { 
     type: String, 
@@ -42,10 +56,9 @@ const pedidoSchema = new mongoose.Schema({
   },
   metodoPago: {
     type: String,
-    enum: ['efectivo', 'yape', 'transferencia', null],  // ← CORREGIDO: agregado null al enum
+    enum: ['efectivo', 'yape', 'transferencia', null],
     default: null
   },
-  // ========== NUEVOS CAMPOS PARA CRÉDITOS ========== 
   montoPagado: {
     type: Number,
     default: 0
@@ -80,7 +93,6 @@ const pedidoSchema = new mongoose.Schema({
       rol: String
     }
   }],
-  // ========== FIN NUEVOS CAMPOS ========== 
   total: { type: Number, required: true },
   totalDescuentos: { type: Number, default: 0 },
   hora: String,
@@ -98,7 +110,6 @@ const pedidoSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// ========== MIDDLEWARE PARA CALCULAR MONTOS ========== 
 pedidoSchema.pre('save', function(next) {
   if (this.isModified('total') || this.isModified('montoPagado')) {
     this.montoRestante = this.total - this.montoPagado;
@@ -106,7 +117,6 @@ pedidoSchema.pre('save', function(next) {
   next();
 });
 
-// ========== ÍNDICES PARA BÚSQUEDAS RÁPIDAS ========== 
 pedidoSchema.index({ 'usuarioCreador._id': 1, estadoPago: 1 });
 pedidoSchema.index({ estadoPago: 1, createdAt: -1 });
 pedidoSchema.index({ 'credito.clienteNombre': 1, estadoPago: 1 });

@@ -1,8 +1,52 @@
 const Pedido = require('../models/Pedido');
 const Usuario = require('../models/Usuario');
 const Cliente = require('../models/Cliente');
+const MenuDia = require('../models/MenuDia');
 const mongoose = require('mongoose');
 const { emitirActualizacion } = require('../utils/helpers');
+
+// ========== HELPER: expandir items de menú ==========
+const expandirItemsMenu = async (items) => {
+  const itemsExpandidos = [];
+
+  for (const item of items) {
+    if (item.tipo === 'menu') {
+      // Buscar el menú por nombre para obtener sus categorías
+      const menu = await MenuDia.findOne({ nombre: item.nombre })
+        .sort({ createdAt: -1 });
+
+      if (menu) {
+        // Expandir cada categoría del menú
+        for (const categoria of menu.categorias) {
+          for (const plato of categoria.platos) {
+            itemsExpandidos.push({
+              tipo: 'menu_item',
+              nombre: plato.nombre,
+              cantidad: item.cantidad,
+              precio: plato.precio,
+              categoria: categoria.nombre,
+              menuNombre: menu.nombre,
+              esMenuExpandido: true,
+              observaciones: item.observaciones || '',
+              descuento: 0,
+              tipoDescuento: 'porcentaje',
+              motivoDescuento: '',
+              usuarioDescuento: ''
+            });
+          }
+        }
+      } else {
+        // Si no encuentra el menú, guardar el item original
+        itemsExpandidos.push(item);
+      }
+    } else {
+      // Item normal, pasa sin cambios
+      itemsExpandidos.push(item);
+    }
+  }
+
+  return itemsExpandidos;
+};
 
 exports.getPedidosHoy = async (req, res) => {
   try {
@@ -80,7 +124,14 @@ exports.getPedidosPorRango = async (req, res) => {
 
 exports.crearPedido = async (req, res) => {
   try {
-    const pedido = new Pedido(req.body);
+    const body = { ...req.body };
+
+    // Expandir items de menú antes de guardar
+    if (body.items && body.items.some(i => i.tipo === 'menu')) {
+      body.items = await expandirItemsMenu(body.items);
+    }
+
+    const pedido = new Pedido(body);
     await pedido.save();
     emitirActualizacion('pedido-creado', pedido);
     res.status(201).json(pedido);
@@ -135,9 +186,7 @@ exports.registrarPago = async (req, res) => {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
 
-    // Si el método de pago es "credito"
     if (metodoPago === 'credito') {
-      // Verificar que el usuario tenga permiso para crear créditos
       const usuario = await Usuario.findById(usuarioId).populate('rol');
       
       if (!usuario) {
@@ -148,7 +197,6 @@ exports.registrarPago = async (req, res) => {
         return res.status(403).json({ error: 'No tienes permiso para autorizar créditos' });
       }
 
-      // Buscar datos del cliente en la BD
       let clienteTelefono = '';
       try {
         const cliente = await Cliente.findOne({ nombre: pedido.cliente });
@@ -159,13 +207,12 @@ exports.registrarPago = async (req, res) => {
         console.log('No se pudo obtener teléfono del cliente:', err);
       }
 
-      // Marcar como crédito con datos del cliente del pedido
       pedido.estadoPago = 'credito';
       pedido.metodoPago = null;
       pedido.montoRestante = pedido.total;
       pedido.credito = {
         clienteNombre: pedido.cliente,
-        clienteTelefono: clienteTelefono,
+        clienteTelefono,
         notas: '',
         fechaCredito: new Date(),
         autorizadoPor: {
@@ -179,7 +226,6 @@ exports.registrarPago = async (req, res) => {
       emitirActualizacion('credito-creado', pedido);
       res.json(pedido);
     } else {
-      // Pago normal (efectivo, yape, transferencia)
       pedido.estadoPago = 'pagado';
       pedido.metodoPago = metodoPago;
       
