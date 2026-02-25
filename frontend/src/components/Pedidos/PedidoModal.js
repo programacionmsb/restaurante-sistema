@@ -234,10 +234,40 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
       return sum + (precioOriginal - calcularPrecioConDescuento(item));
     }, 0);
 
-  // Para el total solo sumamos items visibles + items ocultos de menú (bebida, postre, otros)
-  // El precio del menú completo ya está reflejado en sus items expandidos
-  const calcularTotal = () =>
-    Object.values(items).reduce((sum, item) => sum + calcularPrecioConDescuento(item), 0);
+  // REEMPLAZAR la función calcularTotal en PedidoModal.js
+// Busca: const calcularTotal = () =>
+// Reemplaza con esto:
+
+const calcularTotal = () => {
+  let total = 0;
+
+  // Sumar items normales (no de menú)
+  Object.values(items).forEach(item => {
+    if (!item.esMenuExpandido) {
+      total += calcularPrecioConDescuento(item);
+    }
+  });
+
+  // Sumar menús: precioCompleto × cantidad, una vez por menuId
+  const menusSumados = new Set();
+  Object.values(items).forEach(item => {
+    if (item.esMenuExpandido && item.menuId && !menusSumados.has(item.menuId)) {
+      menusSumados.add(item.menuId);
+      // Buscar el menú en menusDelDia para obtener precioCompleto
+      const menu = menusDelDia.find(m => m._id === item.menuId);
+      if (menu && menu.precioCompleto > 0) {
+        total += menu.precioCompleto * item.cantidad;
+      } else {
+        // Fallback: sumar solo Entrada y Plato Principal si no hay precioCompleto
+        Object.values(items)
+          .filter(i => i.menuId === item.menuId && ['Entrada', 'Plato Principal'].includes(i.categoria))
+          .forEach(i => { total += calcularPrecioConDescuento(i); });
+      }
+    }
+  });
+
+  return total;
+};
 
   // ========== GUARDAR ==========
 

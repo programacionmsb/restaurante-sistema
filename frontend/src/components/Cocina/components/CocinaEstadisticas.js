@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-export const CocinaEstadisticas = ({ pedidosPendientes, pedidosEnPreparacion, totalPedidos, itemsStats }) => {
+export const CocinaEstadisticas = ({
+  pedidosPendientes,
+  pedidosEnPreparacion,
+  totalPedidos,
+  itemsStats,
+  clientes,
+  filtroCliente,
+  onCambiarFiltroCliente,
+}) => {
   return (
     <>
       {/* Estadísticas de Pedidos */}
@@ -25,7 +33,7 @@ export const CocinaEstadisticas = ({ pedidosPendientes, pedidosEnPreparacion, to
         </div>
       </div>
 
-      {/* Estadísticas de Items */}
+      {/* Resumen de Platos */}
       {itemsStats.length > 0 && (
         <div style={{
           background: 'white',
@@ -34,17 +42,90 @@ export const CocinaEstadisticas = ({ pedidosPendientes, pedidosEnPreparacion, to
           marginBottom: '2rem',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }}>
-          <h3 style={{ 
-            fontSize: '1.25rem', 
-            fontWeight: '700', 
-            color: '#1f2937', 
-            marginBottom: '1rem',
+          {/* Header con combobox */}
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            justifyContent: 'space-between',
+            marginBottom: '1rem',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
           }}>
-            📊 Resumen de Platos
-          </h3>
+            <h3 style={{
+              fontSize: '1.25rem',
+              fontWeight: '700',
+              color: '#1f2937',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              📊 Resumen de Platos
+            </h3>
+
+            {/* Combobox de clientes */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '600' }}>
+                Ver por:
+              </label>
+              <select
+                value={filtroCliente}
+                onChange={(e) => onCambiarFiltroCliente(e.target.value)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  background: 'white',
+                  cursor: 'pointer',
+                  minWidth: '180px'
+                }}
+              >
+                <option value="todos">Todos los clientes</option>
+                {clientes.map(cliente => (
+                  <option key={cliente} value={cliente}>{cliente}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Badge cliente seleccionado */}
+          {filtroCliente !== 'todos' && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: '#dbeafe',
+              color: '#1e40af',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '0.5rem',
+              fontSize: '0.8rem',
+              fontWeight: '600',
+              marginBottom: '1rem'
+            }}>
+              👤 Mostrando: {filtroCliente}
+              <button
+                onClick={() => onCambiarFiltroCliente('todos')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#1e40af',
+                  fontWeight: '700',
+                  fontSize: '1rem',
+                  padding: 0,
+                  lineHeight: 1
+                }}
+                title="Limpiar filtro"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* Grid de items */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
@@ -55,48 +136,49 @@ export const CocinaEstadisticas = ({ pedidosPendientes, pedidosEnPreparacion, to
                 background: '#f9fafb',
                 padding: '1rem',
                 borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb'
+                border: `2px solid ${item.categoria === 'Entrada' ? '#86efac' : item.categoria === 'Plato Principal' ? '#93c5fd' : '#e5e7eb'}`
               }}>
-                <div style={{ 
-                  fontWeight: '600', 
+                {/* Badge categoría */}
+                {item.categoria && (
+                  <div style={{
+                    display: 'inline-block',
+                    fontSize: '0.65rem',
+                    fontWeight: '700',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '0.25rem',
+                    marginBottom: '0.4rem',
+                    background: item.categoria === 'Entrada' ? '#d1fae5' : '#dbeafe',
+                    color: item.categoria === 'Entrada' ? '#065f46' : '#1e40af',
+                  }}>
+                    {item.categoria === 'Entrada' ? '🥗' : '🍽️'} {item.categoria.toUpperCase()}
+                  </div>
+                )}
+
+                <div style={{
+                  fontWeight: '600',
                   color: '#1f2937',
                   marginBottom: '0.5rem',
                   fontSize: '0.95rem'
                 }}>
                   {item.nombre}
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '0.75rem',
-                  fontSize: '0.875rem'
-                }}>
+
+                <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.875rem' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>Pendiente</div>
-                    <div style={{ 
-                      fontWeight: '700', 
-                      color: '#ef4444',
-                      fontSize: '1.25rem'
-                    }}>
+                    <div style={{ fontWeight: '700', color: '#ef4444', fontSize: '1.25rem' }}>
                       {item.totalPendiente}
                     </div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>En Prep.</div>
-                    <div style={{ 
-                      fontWeight: '700', 
-                      color: '#f59e0b',
-                      fontSize: '1.25rem'
-                    }}>
+                    <div style={{ fontWeight: '700', color: '#f59e0b', fontSize: '1.25rem' }}>
                       {item.totalEnPreparacion}
                     </div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>Total</div>
-                    <div style={{ 
-                      fontWeight: '700', 
-                      color: '#1f2937',
-                      fontSize: '1.25rem'
-                    }}>
+                    <div style={{ fontWeight: '700', color: '#1f2937', fontSize: '1.25rem' }}>
                       {item.totalGeneral}
                     </div>
                   </div>

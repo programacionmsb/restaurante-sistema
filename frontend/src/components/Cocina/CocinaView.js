@@ -6,18 +6,22 @@ import { useSocketCocina } from './hooks/useSocketCocina';
 import { CocinaEstadisticas } from './components/CocinaEstadisticas';
 import { CocinaFiltros } from './components/CocinaFiltros';
 import { CocinaPedidoCard } from './components/CocinaPedidoCard';
-import { calcularEstadisticasItems, filtrarPedidos, obtenerMeserosUnicos } from './utils/cocinaHelpers';
+import {
+  calcularEstadisticasItems,
+  filtrarPedidos,
+  obtenerMeserosUnicos,
+  obtenerClientesUnicos,
+} from './utils/cocinaHelpers';
 import './cocina.css';
 
 export default function CocinaView() {
   const [filtroMesero, setFiltroMesero] = useState('todos');
   const [busquedaCliente, setBusquedaCliente] = useState('');
+  const [filtroCliente, setFiltroCliente] = useState('todos');
 
-  // Custom hooks
   const { pedidos, loading, tiempos, cargarPedidos } = useCocina();
   useSocketCocina(cargarPedidos);
 
-  // Handlers
   const handleIniciarPreparacion = async (id) => {
     try {
       await pedidosAPI.updateEstado(id, 'en_preparacion');
@@ -36,13 +40,16 @@ export default function CocinaView() {
     }
   };
 
-  // Filtrar pedidos
   const pedidosFiltrados = filtrarPedidos(pedidos, filtroMesero, busquedaCliente);
 
-  // Estadísticas
   const pedidosPendientes = pedidosFiltrados.filter(p => p.estado === 'pendiente').length;
   const pedidosEnPreparacion = pedidosFiltrados.filter(p => p.estado === 'en_preparacion').length;
-  const itemsStats = calcularEstadisticasItems(pedidosFiltrados);
+
+  // Estadísticas con filtro de cliente aplicado
+  const itemsStats = calcularEstadisticasItems(pedidosFiltrados, filtroCliente);
+
+  // Clientes únicos de los pedidos filtrados
+  const clientes = obtenerClientesUnicos(pedidosFiltrados);
   const meseros = obtenerMeserosUnicos(pedidos);
 
   if (loading) {
@@ -58,7 +65,6 @@ export default function CocinaView() {
 
   return (
     <div className="cocina-container">
-      {/* Header */}
       <header className="cocina-header">
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <ChefHat size={32} color="#ef4444" />
@@ -70,16 +76,17 @@ export default function CocinaView() {
       </header>
 
       <main className="cocina-main">
-        {/* Estadísticas */}
-        <CocinaEstadisticas 
+        <CocinaEstadisticas
           pedidosPendientes={pedidosPendientes}
           pedidosEnPreparacion={pedidosEnPreparacion}
           totalPedidos={pedidosFiltrados.length}
           itemsStats={itemsStats}
+          clientes={clientes}
+          filtroCliente={filtroCliente}
+          onCambiarFiltroCliente={setFiltroCliente}
         />
 
-        {/* Filtros */}
-        <CocinaFiltros 
+        <CocinaFiltros
           meseros={meseros}
           filtroMesero={filtroMesero}
           onCambiarFiltroMesero={setFiltroMesero}
@@ -87,7 +94,6 @@ export default function CocinaView() {
           onCambiarBusquedaCliente={setBusquedaCliente}
         />
 
-        {/* Grid de Pedidos */}
         {pedidosFiltrados.length === 0 ? (
           <div className="cocina-vacio">
             <div className="cocina-vacio-icono">🎉</div>
@@ -95,10 +101,9 @@ export default function CocinaView() {
               {pedidos.length === 0 ? '¡Todo listo!' : 'No hay pedidos con este filtro'}
             </div>
             <div className="cocina-vacio-subtexto">
-              {pedidos.length === 0 
+              {pedidos.length === 0
                 ? 'No hay pedidos pendientes en este momento'
-                : 'Intenta cambiar los filtros de búsqueda'
-              }
+                : 'Intenta cambiar los filtros de búsqueda'}
             </div>
           </div>
         ) : (
