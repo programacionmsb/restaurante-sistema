@@ -1,12 +1,13 @@
 import React from 'react';
-import { Search, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 export const CocinaFiltros = ({ 
-  meseros, 
+  meseros,
+  clientes,
   filtroMesero, 
   onCambiarFiltroMesero, 
-  busquedaCliente, 
-  onCambiarBusquedaCliente 
+  filtroCliente,
+  onCambiarFiltroCliente
 }) => {
   return (
     <div style={{
@@ -46,22 +47,30 @@ export const CocinaFiltros = ({
         </select>
       </div>
 
-      {/* Búsqueda por Cliente */}
+      {/* Filtro por Cliente */}
       <div style={{ flex: '1 1 250px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Search size={20} style={{ color: '#6b7280' }} />
-        <input
-          type="text"
-          placeholder="Buscar por cliente..."
-          value={busquedaCliente}
-          onChange={(e) => onCambiarBusquedaCliente(e.target.value)}
+        <Users size={20} style={{ color: '#6b7280' }} />
+        <select
+          value={filtroCliente}
+          onChange={(e) => onCambiarFiltroCliente(e.target.value)}
           style={{
             flex: 1,
             padding: '0.75rem',
             border: '2px solid #e5e7eb',
             borderRadius: '0.5rem',
-            fontSize: '0.95rem'
+            fontSize: '0.95rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            background: 'white'
           }}
-        />
+        >
+          <option value="todos">👤 Todos los clientes</option>
+          {clientes.map(cliente => (
+            <option key={cliente} value={cliente}>
+              {cliente}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

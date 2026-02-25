@@ -77,12 +77,11 @@ export const obtenerClientesUnicos = (pedidos) => {
   return Array.from(clientes).sort();
 };
 
-export const filtrarPedidos = (pedidos, filtroMesero, busquedaCliente) => {
+export const filtrarPedidos = (pedidos, filtroMesero, filtroCliente) => {
   return pedidos.filter(pedido => {
     const pasaMesero = filtroMesero === 'todos' ||
       (pedido.usuarioCreador && pedido.usuarioCreador._id === filtroMesero);
-    const pasaCliente = !busquedaCliente ||
-      pedido.cliente.toLowerCase().includes(busquedaCliente.toLowerCase());
+    const pasaCliente = filtroCliente === 'todos' || pedido.cliente === filtroCliente;
     return pasaMesero && pasaCliente;
   });
 };

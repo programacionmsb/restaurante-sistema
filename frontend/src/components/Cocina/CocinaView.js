@@ -17,7 +17,6 @@ import './cocina.css';
 
 export default function CocinaView() {
   const [filtroMesero, setFiltroMesero] = useState('todos');
-  const [busquedaCliente, setBusquedaCliente] = useState('');
   const [filtroCliente, setFiltroCliente] = useState('todos');
   const [filtroDestino, setFiltroDestino] = useState('todos');
 
@@ -42,7 +41,7 @@ export default function CocinaView() {
     }
   };
 
-  const pedidosFiltrados = filtrarPedidos(pedidos, filtroMesero, busquedaCliente);
+  const pedidosFiltrados = filtrarPedidos(pedidos, filtroMesero, filtroCliente);
 
   const pedidosPendientes = pedidosFiltrados.filter(p => p.estado === 'pendiente').length;
   const pedidosEnPreparacion = pedidosFiltrados.filter(p => p.estado === 'en_preparacion').length;
@@ -92,10 +91,11 @@ export default function CocinaView() {
 
         <CocinaFiltros
           meseros={meseros}
+          clientes={clientes}
           filtroMesero={filtroMesero}
           onCambiarFiltroMesero={setFiltroMesero}
-          busquedaCliente={busquedaCliente}
-          onCambiarBusquedaCliente={setBusquedaCliente}
+          filtroCliente={filtroCliente}
+          onCambiarFiltroCliente={setFiltroCliente}
         />
 
         {pedidosFiltrados.length === 0 ? (
