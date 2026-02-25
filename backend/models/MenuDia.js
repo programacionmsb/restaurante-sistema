@@ -17,7 +17,7 @@ const menuDiaSchema = new mongoose.Schema({
     nombre: { 
       type: String, 
       required: true,
-      enum: ['Entrada', 'Plato Principal', 'Postre', 'Bebida']
+      enum: ['Entrada', 'Plato Principal', 'Postre', 'Bebida', 'Otros']
     },
     platos: [{
       platoId: { 
