@@ -44,7 +44,14 @@ export const useMenu = () => {
         platosAPI.getByTipo('postre'),
         platosAPI.getByTipo('otros'),
       ]);
-      setPlatosDisponibles({ entrada: entradas, plato: platos, bebida: bebidas, postre: postres, otros });
+      // Solo cargar platos con disponible: true
+      setPlatosDisponibles({
+        entrada: entradas.filter(p => p.disponible),
+        plato:   platos.filter(p => p.disponible),
+        bebida:  bebidas.filter(p => p.disponible),
+        postre:  postres.filter(p => p.disponible),
+        otros:   otros.filter(p => p.disponible),
+      });
     } catch (err) {
       console.error('Error cargando platos:', err);
     }
