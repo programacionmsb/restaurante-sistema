@@ -42,7 +42,11 @@ export const CocinaPedidoCard = ({
       {/* Header */}
       <div className="cocina-pedido-header">
         <div>
-          <div className="cocina-pedido-mesa">Mesa {pedido.mesa}</div>
+          <div className="cocina-pedido-mesa">
+            {pedido.mesa?.startsWith('DELIVERY:') ? `🛵 ${pedido.mesa}`
+            : pedido.mesa?.startsWith('OTRO:') ? `📦 ${pedido.mesa}`
+            : `🪑 ${pedido.mesa}`}
+          </div>
           <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
             {pedido.cliente}
           </div>
