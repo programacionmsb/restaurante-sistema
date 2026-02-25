@@ -8,6 +8,7 @@ export const CocinaEstadisticas = ({
   clientes,
   filtroCliente,
   onCambiarFiltroCliente,
+  statsTipo,
 }) => {
   return (
     <>
@@ -32,6 +33,65 @@ export const CocinaEstadisticas = ({
           </div>
         </div>
       </div>
+
+      {/* Estadísticas por Tipo */}
+      {statsTipo && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1rem',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '0.75rem',
+            padding: '1rem 1.5rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            border: '2px solid #e0f2fe'
+          }}>
+            <span style={{ fontSize: '2rem' }}>🪑</span>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>Mesa</div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#0284c7' }}>{statsTipo.MESA}</div>
+            </div>
+          </div>
+          <div style={{
+            background: 'white',
+            borderRadius: '0.75rem',
+            padding: '1rem 1.5rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            border: '2px solid #fef9c3'
+          }}>
+            <span style={{ fontSize: '2rem' }}>🛵</span>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>Delivery</div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ca8a04' }}>{statsTipo.DELIVERY}</div>
+            </div>
+          </div>
+          <div style={{
+            background: 'white',
+            borderRadius: '0.75rem',
+            padding: '1rem 1.5rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            border: '2px solid #f3e8ff'
+          }}>
+            <span style={{ fontSize: '2rem' }}>📦</span>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: '600' }}>Otro</div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#7c3aed' }}>{statsTipo.OTRO}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resumen de Platos */}
       {itemsStats.length > 0 && (

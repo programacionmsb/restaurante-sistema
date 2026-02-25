@@ -80,3 +80,20 @@ export const obtenerMeserosUnicos = (pedidos) => {
   });
   return Array.from(meserosMap.values());
 };
+
+export const calcularEstadisticasTipo = (pedidos) => {
+  const stats = { MESA: 0, DELIVERY: 0, OTRO: 0 };
+
+  pedidos.forEach(pedido => {
+    const mesa = pedido.mesa || '';
+    if (mesa.startsWith('DELIVERY:')) {
+      stats.DELIVERY += 1;
+    } else if (mesa.startsWith('OTRO:')) {
+      stats.OTRO += 1;
+    } else {
+      stats.MESA += 1;
+    }
+  });
+
+  return stats;
+};

@@ -8,6 +8,7 @@ import { CocinaFiltros } from './components/CocinaFiltros';
 import { CocinaPedidoCard } from './components/CocinaPedidoCard';
 import {
   calcularEstadisticasItems,
+  calcularEstadisticasTipo,
   filtrarPedidos,
   obtenerMeserosUnicos,
   obtenerClientesUnicos,
@@ -50,6 +51,7 @@ export default function CocinaView() {
 
   // Clientes únicos de los pedidos filtrados
   const clientes = obtenerClientesUnicos(pedidosFiltrados);
+  const statsTipo = calcularEstadisticasTipo(pedidosFiltrados);
   const meseros = obtenerMeserosUnicos(pedidos);
 
   if (loading) {
@@ -84,6 +86,7 @@ export default function CocinaView() {
           clientes={clientes}
           filtroCliente={filtroCliente}
           onCambiarFiltroCliente={setFiltroCliente}
+          statsTipo={statsTipo}
         />
 
         <CocinaFiltros

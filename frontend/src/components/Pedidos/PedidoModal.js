@@ -21,6 +21,8 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
     postre: []
   });
   const [formData, setFormData] = useState({ cliente: '', mesa: '' });
+  const [tipoMesa, setTipoMesa] = useState('MESA');
+  const [detalleMesa, setDetalleMesa] = useState('');
   const [items, setItems] = useState({});
   const [loading, setLoading] = useState(true);
   const [descuentoModalOpen, setDescuentoModalOpen] = useState(false);
@@ -30,7 +32,18 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
 
   useEffect(() => {
     if (pedidoEditar) {
-      setFormData({ cliente: pedidoEditar.cliente, mesa: pedidoEditar.mesa });
+      const mesaVal = pedidoEditar.mesa || '';
+      if (mesaVal.startsWith('DELIVERY:')) {
+        setTipoMesa('DELIVERY');
+        setDetalleMesa(mesaVal.replace('DELIVERY:', '').trim());
+      } else if (mesaVal.startsWith('OTRO:')) {
+        setTipoMesa('OTRO');
+        setDetalleMesa(mesaVal.replace('OTRO:', '').trim());
+      } else {
+        setTipoMesa('MESA');
+        setDetalleMesa(mesaVal.replace('MESA:', '').trim());
+      }
+      setFormData({ cliente: pedidoEditar.cliente, mesa: mesaVal });
       const itemsObj = {};
       pedidoEditar.items.forEach((item, index) => {
         const tempId = `temp-${index}`;
@@ -234,46 +247,17 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
       return sum + (precioOriginal - calcularPrecioConDescuento(item));
     }, 0);
 
-  // REEMPLAZAR la función calcularTotal en PedidoModal.js
-// Busca: const calcularTotal = () =>
-// Reemplaza con esto:
-
-const calcularTotal = () => {
-  let total = 0;
-
-  // Sumar items normales (no de menú)
-  Object.values(items).forEach(item => {
-    if (!item.esMenuExpandido) {
-      total += calcularPrecioConDescuento(item);
-    }
-  });
-
-  // Sumar menús: precioCompleto × cantidad, una vez por menuId
-  const menusSumados = new Set();
-  Object.values(items).forEach(item => {
-    if (item.esMenuExpandido && item.menuId && !menusSumados.has(item.menuId)) {
-      menusSumados.add(item.menuId);
-      // Buscar el menú en menusDelDia para obtener precioCompleto
-      const menu = menusDelDia.find(m => m._id === item.menuId);
-      if (menu && menu.precioCompleto > 0) {
-        total += menu.precioCompleto * item.cantidad;
-      } else {
-        // Fallback: sumar solo Entrada y Plato Principal si no hay precioCompleto
-        Object.values(items)
-          .filter(i => i.menuId === item.menuId && ['Entrada', 'Plato Principal'].includes(i.categoria))
-          .forEach(i => { total += calcularPrecioConDescuento(i); });
-      }
-    }
-  });
-
-  return total;
-};
+  // Para el total solo sumamos items visibles + items ocultos de menú (bebida, postre, otros)
+  // El precio del menú completo ya está reflejado en sus items expandidos
+  const calcularTotal = () =>
+    Object.values(items).reduce((sum, item) => sum + calcularPrecioConDescuento(item), 0);
 
   // ========== GUARDAR ==========
 
   const handleGuardarPedido = async () => {
     if (!formData.cliente) return alert('Seleccione un cliente');
-    if (!formData.mesa) return alert('Ingrese el número de mesa');
+    if (!detalleMesa.trim()) return alert(`Ingrese el detalle de ${tipoMesa === 'MESA' ? 'mesa' : tipoMesa === 'DELIVERY' ? 'dirección' : 'descripción'}`);
+    const mesaFormateada = `${tipoMesa}: ${detalleMesa.trim()}`;
     const itemsArray = Object.values(items);
     if (itemsArray.length === 0) return alert('Agregue al menos un item al pedido');
 
@@ -288,7 +272,7 @@ const calcularTotal = () => {
 
     const pedidoData = {
       cliente: formData.cliente,
-      mesa: formData.mesa,
+      mesa: mesaFormateada,
       items: itemsArray,
       total: calcularTotal(),
       totalDescuentos: calcularDescuentoTotal(),
@@ -356,7 +340,7 @@ const calcularTotal = () => {
           ) : (
             <>
               {/* Información básica */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '0.75rem' }}>
                 <div className="form-group">
                   <label className="form-label">Cliente *</label>
                   <select className="form-input" value={formData.cliente} onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}>
@@ -364,9 +348,31 @@ const calcularTotal = () => {
                     {clientes.map(c => <option key={c._id} value={c.nombre}>{c.nombre}</option>)}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Mesa *</label>
-                  <input type="text" className="form-input" value={formData.mesa} onChange={(e) => setFormData({ ...formData, mesa: e.target.value })} placeholder="Ej: 5" />
+                <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label className="form-label">Tipo *</label>
+                    <select
+                      className="form-input"
+                      value={tipoMesa}
+                      onChange={(e) => { setTipoMesa(e.target.value); setDetalleMesa(''); }}
+                    >
+                      <option value="MESA">🪑 Mesa</option>
+                      <option value="DELIVERY">🛵 Delivery</option>
+                      <option value="OTRO">📦 Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">
+                      {tipoMesa === 'MESA' ? 'Nro de Mesa *' : tipoMesa === 'DELIVERY' ? 'Dirección *' : 'Descripción *'}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={detalleMesa}
+                      onChange={(e) => setDetalleMesa(e.target.value)}
+                      placeholder={tipoMesa === 'MESA' ? 'Ej: 5' : tipoMesa === 'DELIVERY' ? 'Ej: Av. Lima 123' : 'Ej: Evento corporativo'}
+                    />
+                  </div>
                 </div>
               </div>
 
