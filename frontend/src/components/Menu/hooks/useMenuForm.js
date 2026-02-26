@@ -45,7 +45,7 @@ export const useMenuForm = (onGuardado) => {
       nombreMenu: menu.nombre,
       descripcionMenu: menu.descripcion || '',
       precioCompleto: menu.precioCompleto || 0,
-      fechaSeleccionada: new Date(menu.fecha).toISOString().split('T')[0],
+      fechaSeleccionada: (() => { const d = new Date(menu.fecha); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; })(),
       categorias: categoriasParaEdicion,
     });
     setModoEdicion(true);
