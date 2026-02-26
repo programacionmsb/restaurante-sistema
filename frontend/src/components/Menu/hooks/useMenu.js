@@ -22,10 +22,24 @@ export const useMenu = () => {
     try {
       const inicio = new Date(semanaActual);
       const fin = getFinSemana(inicio);
-      const menusData = await menuAPI.getPorRango(
-        inicio.toISOString().split('T')[0],
-        fin.toISOString().split('T')[0]
-      );
+
+      const inicioStr = inicio.toISOString().split('T')[0];
+      const finStr = fin.toISOString().split('T')[0];
+
+      console.log('=== MENU DEBUG ===');
+      console.log('semanaActual:', semanaActual);
+      console.log('inicio objeto:', inicio.toString());
+      console.log('fin objeto:', fin.toString());
+      console.log('inicioStr enviado al API:', inicioStr);
+      console.log('finStr enviado al API:', finStr);
+
+      const menusData = await menuAPI.getPorRango(inicioStr, finStr);
+
+      console.log('menus recibidos:', menusData.length);
+      menusData.forEach(m => {
+        console.log(`  menu: ${m.nombre} | fecha raw: ${m.fecha} | fecha UTC: ${new Date(m.fecha).toISOString().split('T')[0]}`);
+      });
+
       setMenus(menusData);
     } catch (err) {
       console.error('Error:', err);
@@ -44,7 +58,6 @@ export const useMenu = () => {
         platosAPI.getByTipo('postre'),
         platosAPI.getByTipo('otros'),
       ]);
-      // Solo cargar platos con disponible: true
       setPlatosDisponibles({
         entrada: entradas.filter(p => p.disponible),
         plato:   platos.filter(p => p.disponible),
