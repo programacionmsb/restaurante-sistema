@@ -1,5 +1,10 @@
 // ========== FECHAS ==========
 
+const toLocalDateStr = (fecha) => {
+  const d = new Date(fecha);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+
 export const getInicioSemana = (fecha) => {
   const d = new Date(fecha);
   const day = d.getDay();
@@ -24,13 +29,11 @@ export const getDiasSemanales = (semanaActual) => {
   return dias;
 };
 
-// Compara fechas usando partes UTC para evitar problemas de zona horaria
 export const getMenusPorFecha = (menus, fecha) => {
-  const fechaStr = fecha.toISOString().split('T')[0];
+  const fechaStr = toLocalDateStr(fecha);
   return menus.filter(m => {
-    const d = new Date(m.fecha);
-    // Usar partes UTC directamente para evitar desfase por zona horaria
-    const menuFecha = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    const menuFecha = toLocalDateStr(new Date(m.fecha));
+    console.log(`    getMenusPorFecha: buscando ${fechaStr} | menu "${m.nombre}" tiene ${menuFecha} | match: ${menuFecha === fechaStr}`);
     return menuFecha === fechaStr;
   });
 };

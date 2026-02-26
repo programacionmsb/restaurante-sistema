@@ -1,26 +1,18 @@
 import { useState, useEffect } from 'react';
 import { menuAPI } from '../../../services/apiMenu';
 import { platosAPI } from '../../../services/apiPlatos';
-import { getInicioSemana, getFinSemana } from '../utils/menuHelpers';
+import { getInicioSemana, getFinSemana, getDiasSemanales, getMenusPorFecha } from '../utils/menuHelpers';
 
-// Convierte Date a string YYYY-MM-DD usando hora LOCAL (sin desfase UTC)
 const toLocalDateStr = (fecha) => {
   const d = new Date(fecha);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
 export const useMenu = () => {
   const [semanaActual, setSemanaActual] = useState(getInicioSemana(new Date()));
   const [menus, setMenus] = useState([]);
   const [platosDisponibles, setPlatosDisponibles] = useState({
-    entrada: [],
-    plato: [],
-    bebida: [],
-    postre: [],
-    otros: [],
+    entrada: [], plato: [], bebida: [], postre: [], otros: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,11 +24,36 @@ export const useMenu = () => {
       const inicio = new Date(semanaActual);
       const fin = getFinSemana(inicio);
 
-      // Usar hora LOCAL para no desfasar por zona horaria
       const inicioStr = toLocalDateStr(inicio);
       const finStr = toLocalDateStr(fin);
 
+      console.log('=== MENU DEBUG cargarMenus ===');
+      console.log('semanaActual raw:', semanaActual);
+      console.log('inicio.toString():', inicio.toString());
+      console.log('inicio local date:', inicioStr);
+      console.log('fin local date:', finStr);
+
       const menusData = await menuAPI.getPorRango(inicioStr, finStr);
+
+      console.log('=== MENUS RECIBIDOS DEL BACKEND ===');
+      menusData.forEach(m => {
+        const fechaRaw = m.fecha;
+        const fechaObj = new Date(fechaRaw);
+        console.log(`  nombre: "${m.nombre}"`);
+        console.log(`    fecha raw del backend: ${fechaRaw}`);
+        console.log(`    fecha UTC str: ${fechaObj.toISOString().split('T')[0]}`);
+        console.log(`    fecha LOCAL str: ${toLocalDateStr(fechaObj)}`);
+        console.log(`    getUTCDate: ${fechaObj.getUTCDate()} | getDate (local): ${fechaObj.getDate()}`);
+      });
+
+      // Log del grid de días
+      console.log('=== GRID DE DIAS SEMANALES ===');
+      const dias = getDiasSemanales(semanaActual);
+      dias.forEach(dia => {
+        const menusDelDia = getMenusPorFecha(menusData, dia);
+        console.log(`  dia: ${dia.toString()} | local: ${toLocalDateStr(dia)} | menus: ${menusDelDia.map(m => m.nombre).join(', ') || 'ninguno'}`);
+      });
+
       setMenus(menusData);
     } catch (err) {
       console.error('Error:', err);
@@ -102,15 +119,7 @@ export const useMenu = () => {
   }, [semanaActual]);
 
   return {
-    semanaActual,
-    menus,
-    platosDisponibles,
-    loading,
-    error,
-    cargarMenus,
-    eliminarMenu,
-    toggleMenuActivo,
-    cambiarSemana,
-    irSemanaActual,
+    semanaActual, menus, platosDisponibles, loading, error,
+    cargarMenus, eliminarMenu, toggleMenuActivo, cambiarSemana, irSemanaActual,
   };
 };
