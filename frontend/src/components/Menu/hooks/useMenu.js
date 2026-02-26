@@ -3,6 +3,15 @@ import { menuAPI } from '../../../services/apiMenu';
 import { platosAPI } from '../../../services/apiPlatos';
 import { getInicioSemana, getFinSemana } from '../utils/menuHelpers';
 
+// Convierte Date a string YYYY-MM-DD usando hora LOCAL (sin desfase UTC)
+const toLocalDateStr = (fecha) => {
+  const d = new Date(fecha);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const useMenu = () => {
   const [semanaActual, setSemanaActual] = useState(getInicioSemana(new Date()));
   const [menus, setMenus] = useState([]);
@@ -23,23 +32,11 @@ export const useMenu = () => {
       const inicio = new Date(semanaActual);
       const fin = getFinSemana(inicio);
 
-      const inicioStr = inicio.toISOString().split('T')[0];
-      const finStr = fin.toISOString().split('T')[0];
-
-      console.log('=== MENU DEBUG ===');
-      console.log('semanaActual:', semanaActual);
-      console.log('inicio objeto:', inicio.toString());
-      console.log('fin objeto:', fin.toString());
-      console.log('inicioStr enviado al API:', inicioStr);
-      console.log('finStr enviado al API:', finStr);
+      // Usar hora LOCAL para no desfasar por zona horaria
+      const inicioStr = toLocalDateStr(inicio);
+      const finStr = toLocalDateStr(fin);
 
       const menusData = await menuAPI.getPorRango(inicioStr, finStr);
-
-      console.log('menus recibidos:', menusData.length);
-      menusData.forEach(m => {
-        console.log(`  menu: ${m.nombre} | fecha raw: ${m.fecha} | fecha UTC: ${new Date(m.fecha).toISOString().split('T')[0]}`);
-      });
-
       setMenus(menusData);
     } catch (err) {
       console.error('Error:', err);
