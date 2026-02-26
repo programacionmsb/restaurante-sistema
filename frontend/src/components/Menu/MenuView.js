@@ -75,6 +75,7 @@ export default function MenuView() {
         fecha: fechaStr,
         nombre: nombreClon,
         descripcion: menu.descripcion || '',
+        precios: menu.precios ? menu.precios.map(p => ({ nombre: p.nombre, precio: p.precio })) : [],
         precioCompleto: menu.precioCompleto || 0,
         categorias: menu.categorias.map(cat => ({
           nombre: cat.nombre,

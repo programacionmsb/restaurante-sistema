@@ -77,7 +77,7 @@ exports.getAll = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { fecha, nombre, descripcion, categorias, precioCompleto } = req.body;
+    const { fecha, nombre, descripcion, categorias, precioCompleto, precios } = req.body;
 
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({ error: 'El nombre del menú es obligatorio' });
@@ -113,6 +113,7 @@ exports.create = async (req, res) => {
       nombre: nombre.trim(),
       descripcion: descripcion || '',
       categorias: categoriasCompletas,
+      precios: precios || [],
       precioCompleto: precioCompleto || 0,
       activo: true
     });
@@ -127,7 +128,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { fecha, nombre, descripcion, categorias, precioCompleto, activo } = req.body;
+    const { fecha, nombre, descripcion, categorias, precioCompleto, activo, precios } = req.body;
 
     const menu = await MenuDia.findById(req.params.id);
     if (!menu) return res.status(404).json({ error: 'Menú no encontrado' });
@@ -170,6 +171,7 @@ exports.update = async (req, res) => {
 
     if (nombre) menu.nombre = nombre.trim();
     if (descripcion !== undefined) menu.descripcion = descripcion;
+    if (precios !== undefined) menu.precios = precios;
     if (precioCompleto !== undefined) menu.precioCompleto = precioCompleto;
     if (activo !== undefined) menu.activo = activo;
 
