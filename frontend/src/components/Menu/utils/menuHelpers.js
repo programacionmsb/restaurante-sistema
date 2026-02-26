@@ -1,8 +1,9 @@
 // ========== FECHAS ==========
 
-const toLocalDateStr = (fecha) => {
+// Convierte Date a string YYYY-MM-DD usando UTC (igual que el backend)
+const toUTCDateStr = (fecha) => {
   const d = new Date(fecha);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
 };
 
 export const getInicioSemana = (fecha) => {
@@ -29,11 +30,15 @@ export const getDiasSemanales = (semanaActual) => {
   return dias;
 };
 
+// Compara usando UTC en ambos lados — el backend siempre guarda T00:00:00.000Z
 export const getMenusPorFecha = (menus, fecha) => {
-  const fechaStr = toLocalDateStr(fecha);
+  // Para la fecha del grid, usar UTC también
+  const d = new Date(fecha);
+  // Crear fecha UTC con año/mes/día locales para que coincida con lo que el usuario ve
+  const fechaStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  
   return menus.filter(m => {
-    const menuFecha = toLocalDateStr(new Date(m.fecha));
-    console.log(`    getMenusPorFecha: buscando ${fechaStr} | menu "${m.nombre}" tiene ${menuFecha} | match: ${menuFecha === fechaStr}`);
+    const menuFecha = toUTCDateStr(new Date(m.fecha));
     return menuFecha === fechaStr;
   });
 };

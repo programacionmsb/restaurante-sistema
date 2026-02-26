@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { menuAPI } from '../../../services/apiMenu';
 import { platosAPI } from '../../../services/apiPlatos';
-import { getInicioSemana, getFinSemana, getDiasSemanales, getMenusPorFecha } from '../utils/menuHelpers';
+import { getInicioSemana, getFinSemana } from '../utils/menuHelpers';
 
+// Convierte Date a YYYY-MM-DD usando partes LOCALES (para enviar al API)
 const toLocalDateStr = (fecha) => {
   const d = new Date(fecha);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -23,37 +24,10 @@ export const useMenu = () => {
     try {
       const inicio = new Date(semanaActual);
       const fin = getFinSemana(inicio);
-
-      const inicioStr = toLocalDateStr(inicio);
-      const finStr = toLocalDateStr(fin);
-
-      console.log('=== MENU DEBUG cargarMenus ===');
-      console.log('semanaActual raw:', semanaActual);
-      console.log('inicio.toString():', inicio.toString());
-      console.log('inicio local date:', inicioStr);
-      console.log('fin local date:', finStr);
-
-      const menusData = await menuAPI.getPorRango(inicioStr, finStr);
-
-      console.log('=== MENUS RECIBIDOS DEL BACKEND ===');
-      menusData.forEach(m => {
-        const fechaRaw = m.fecha;
-        const fechaObj = new Date(fechaRaw);
-        console.log(`  nombre: "${m.nombre}"`);
-        console.log(`    fecha raw del backend: ${fechaRaw}`);
-        console.log(`    fecha UTC str: ${fechaObj.toISOString().split('T')[0]}`);
-        console.log(`    fecha LOCAL str: ${toLocalDateStr(fechaObj)}`);
-        console.log(`    getUTCDate: ${fechaObj.getUTCDate()} | getDate (local): ${fechaObj.getDate()}`);
-      });
-
-      // Log del grid de días
-      console.log('=== GRID DE DIAS SEMANALES ===');
-      const dias = getDiasSemanales(semanaActual);
-      dias.forEach(dia => {
-        const menusDelDia = getMenusPorFecha(menusData, dia);
-        console.log(`  dia: ${dia.toString()} | local: ${toLocalDateStr(dia)} | menus: ${menusDelDia.map(m => m.nombre).join(', ') || 'ninguno'}`);
-      });
-
+      const menusData = await menuAPI.getPorRango(
+        toLocalDateStr(inicio),
+        toLocalDateStr(fin)
+      );
       setMenus(menusData);
     } catch (err) {
       console.error('Error:', err);
