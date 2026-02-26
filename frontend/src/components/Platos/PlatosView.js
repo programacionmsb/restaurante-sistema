@@ -28,11 +28,13 @@ export default function PlatosView() {
   const [todosPlatos, setTodosPlatos] = useState([]);
   const [cargandoGlobal, setCargandoGlobal] = useState(false);
 
+  const modoGlobal = busquedaGlobal || filtroGlobal !== 'todos';
+
   useEffect(() => {
-    if (busquedaGlobal && todosPlatos.length === 0) {
+    if (modoGlobal && todosPlatos.length === 0) {
       cargarTodosLosPlatos();
     }
-  }, [busquedaGlobal]);
+  }, [busquedaGlobal, filtroGlobal]);
 
   const cargarTodosLosPlatos = async () => {
     setCargandoGlobal(true);
@@ -58,9 +60,9 @@ export default function PlatosView() {
     setFiltroGlobal('todos');
   };
 
-  const resultadosGlobales = busquedaGlobal
+  const resultadosGlobales = modoGlobal
     ? todosPlatos
-        .filter(p => p.nombre.toLowerCase().includes(busquedaGlobal.toLowerCase()))
+        .filter(p => !busquedaGlobal || p.nombre.toLowerCase().includes(busquedaGlobal.toLowerCase()))
         .filter(p => {
           if (filtroGlobal === 'disponibles') return p.disponible;
           if (filtroGlobal === 'no_disponibles') return !p.disponible;
@@ -143,7 +145,7 @@ export default function PlatosView() {
             </div>
           </div>
 
-          {busquedaGlobal ? (
+          {modoGlobal ? (
             <div>
               {cargandoGlobal ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: '#8b5cf6' }}>Buscando...</div>
