@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { platosAPI } from '../../services/apiPlatos';
 import { X } from 'lucide-react';
-import '../platos.css';
+import './platos.css';
 
 export default function PlatoModal({ isOpen, onClose, plato, onSave, categoriaInicial }) {
   const [formData, setFormData] = useState({
