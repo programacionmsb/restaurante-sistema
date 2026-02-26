@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Eye, EyeOff, Edit2, Trash2, FileDown, FileSpreadsheet } from 'lucide-react';
+import { Plus, Eye, EyeOff, Edit2, Trash2, FileDown, FileSpreadsheet, Copy } from 'lucide-react';
 import ProtectedAction from '../../ProtectedAction';
 
 export const MenuDiaCard = ({
@@ -9,11 +9,12 @@ export const MenuDiaCard = ({
   onEditar,
   onEliminar,
   onToggle,
+  onClonar,
   onExportarPDF,
   onExportarExcel,
 }) => {
   const esHoy = dia.toDateString() === new Date().toDateString();
-  const fechaStr = dia.toISOString().split('T')[0];
+  const fechaStr = `${dia.getFullYear()}-${String(dia.getMonth()+1).padStart(2,'0')}-${String(dia.getDate()).padStart(2,'0')}`;
   const menusActivos = menus.filter(m => m.activo);
 
   const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -117,6 +118,19 @@ export const MenuDiaCard = ({
                     title="Editar"
                   >
                     <Edit2 size={12} />
+                  </button>
+                </ProtectedAction>
+
+                <ProtectedAction permisos={['menu.crear']}>
+                  <button
+                    onClick={() => onClonar(menu)}
+                    style={{
+                      flex: 1, padding: '0.25rem', background: '#e0e7ff', color: '#4338ca',
+                      border: 'none', borderRadius: '0.25rem', cursor: 'pointer',
+                    }}
+                    title="Clonar"
+                  >
+                    <Copy size={12} />
                   </button>
                 </ProtectedAction>
 

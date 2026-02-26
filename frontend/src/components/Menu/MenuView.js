@@ -6,6 +6,7 @@ import { useMenuExport } from './hooks/useMenuExport';
 import { MenuFormulario } from './components/MenuFormulario';
 import { MenuSemanaGrid } from './components/MenuSemanaGrid';
 import { formatFecha, getFinSemana } from './utils/menuHelpers';
+import { menuAPI } from '../../services/apiMenu';
 import './menu.css';
 
 export default function MenuView() {
@@ -47,6 +48,48 @@ export default function MenuView() {
     inicioSemanaStr,
     finSemanaStr,
   } = useMenuExport(semanaActual, menus);
+
+  // ========== CLONAR MENÚ ==========
+  const clonarMenu = async (menu) => {
+    try {
+      // Obtener menús del mismo día
+      const menusMismoDia = menus.filter(m => {
+        const fechaMenu = new Date(m.fecha).toISOString().split('T')[0];
+        const fechaOriginal = new Date(menu.fecha).toISOString().split('T')[0];
+        return fechaMenu === fechaOriginal;
+      });
+
+      // Nombre base sin prefijo COPIA N -
+      const nombreBase = menu.nombre.replace(/^COPIA \d+ - /, '');
+
+      // Contar copias existentes del mismo nombre base
+      const copias = menusMismoDia.filter(m =>
+        m.nombre.match(/^COPIA \d+ - /) && m.nombre.replace(/^COPIA \d+ - /, '') === nombreBase
+      ).length;
+
+      const nombreClon = `COPIA ${copias + 1} - ${nombreBase}`;
+
+      const fechaStr = new Date(menu.fecha).toISOString().split('T')[0];
+
+      const menuData = {
+        fecha: fechaStr,
+        nombre: nombreClon,
+        descripcion: menu.descripcion || '',
+        precioCompleto: menu.precioCompleto || 0,
+        categorias: menu.categorias.map(cat => ({
+          nombre: cat.nombre,
+          platos: cat.platos.map(p => ({
+            platoId: typeof p.platoId === 'string' ? p.platoId : p.platoId._id,
+          }))
+        }))
+      };
+
+      await menuAPI.create(menuData);
+      cargarMenus();
+    } catch (error) {
+      alert('Error al clonar menú: ' + error.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -114,6 +157,7 @@ export default function MenuView() {
               onEditarMenu={editarMenu}
               onEliminarMenu={eliminarMenu}
               onToggleMenu={toggleMenuActivo}
+              onClonarMenu={clonarMenu}
             />
           )}
         </div>

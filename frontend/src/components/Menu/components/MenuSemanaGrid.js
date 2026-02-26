@@ -18,6 +18,7 @@ export const MenuSemanaGrid = ({
   onEditarMenu,
   onEliminarMenu,
   onToggleMenu,
+  onClonarMenu,
 }) => {
   return (
     <>
@@ -81,6 +82,7 @@ export const MenuSemanaGrid = ({
             onEditar={onEditarMenu}
             onEliminar={onEliminarMenu}
             onToggle={onToggleMenu}
+            onClonar={onClonarMenu}
             onExportarPDF={onExportarDiaPDF}
             onExportarExcel={onExportarDiaExcel}
           />
