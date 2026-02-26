@@ -2,19 +2,22 @@ const MenuDia = require('../models/MenuDia');
 const Plato = require('../models/Plato');
 const { emitirActualizacion } = require('../utils/helpers');
 
+// Helper: convierte string "YYYY-MM-DD" a Date UTC medianoche
+const fechaUTC = (str) => new Date(str.split('T')[0] + 'T00:00:00.000Z');
+
 exports.getHoy = async (req, res) => {
   try {
     const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    
-    const manana = new Date(hoy);
-    manana.setDate(manana.getDate() + 1);
-    
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+    const inicio = fechaUTC(hoyStr);
+    const fin = new Date(inicio);
+    fin.setUTCDate(fin.getUTCDate() + 1);
+
     const menus = await MenuDia.find({
-      fecha: { $gte: hoy, $lt: manana },
+      fecha: { $gte: inicio, $lt: fin },
       activo: true
     }).populate('categorias.platos.platoId').sort({ nombre: 1 });
-    
+
     res.json(menus);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -23,16 +26,14 @@ exports.getHoy = async (req, res) => {
 
 exports.getPorFecha = async (req, res) => {
   try {
-    const fecha = new Date(req.params.fecha);
-    fecha.setHours(0, 0, 0, 0);
-    
-    const siguiente = new Date(fecha);
-    siguiente.setDate(siguiente.getDate() + 1);
-    
+    const inicio = fechaUTC(req.params.fecha);
+    const fin = new Date(inicio);
+    fin.setUTCDate(fin.getUTCDate() + 1);
+
     const menus = await MenuDia.find({
-      fecha: { $gte: fecha, $lt: siguiente }
+      fecha: { $gte: inicio, $lt: fin }
     }).populate('categorias.platos.platoId').sort({ nombre: 1 });
-    
+
     res.json(menus);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -42,11 +43,7 @@ exports.getPorFecha = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const menu = await MenuDia.findById(req.params.id).populate('categorias.platos.platoId');
-    
-    if (!menu) {
-      return res.status(404).json({ error: 'Menú no encontrado' });
-    }
-    
+    if (!menu) return res.status(404).json({ error: 'Menú no encontrado' });
     res.json(menu);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -56,28 +53,22 @@ exports.getById = async (req, res) => {
 exports.getAll = async (req, res) => {
   try {
     const { limit = 30, activo, fechaInicio, fechaFin } = req.query;
-    
     const filtro = {};
-    
-    if (activo !== undefined) {
-      filtro.activo = activo === 'true';
-    }
-    
+
+    if (activo !== undefined) filtro.activo = activo === 'true';
+
     if (fechaInicio && fechaFin) {
-      const inicio = new Date(fechaInicio);
-      inicio.setHours(0, 0, 0, 0);
-      
-      const fin = new Date(fechaFin);
-      fin.setHours(23, 59, 59, 999);
-      
+      const inicio = fechaUTC(fechaInicio);
+      const fin = new Date(fechaUTC(fechaFin));
+      fin.setUTCHours(23, 59, 59, 999);
       filtro.fecha = { $gte: inicio, $lte: fin };
     }
-    
+
     const menus = await MenuDia.find(filtro)
       .sort({ fecha: 1, nombre: 1 })
       .limit(parseInt(limit))
       .populate('categorias.platos.platoId');
-    
+
     res.json(menus);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -87,33 +78,24 @@ exports.getAll = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { fecha, nombre, descripcion, categorias, precioCompleto } = req.body;
-    
+
     if (!nombre || !nombre.trim()) {
       return res.status(400).json({ error: 'El nombre del menú es obligatorio' });
     }
-    
-    const fechaStr = fecha.split('T')[0];
-    const fechaDate = new Date(fechaStr + 'T00:00:00.000Z');
-    
-    const menuExistente = await MenuDia.findOne({
-      fecha: fechaDate,
-      nombre: nombre.trim()
-    });
-    
+
+    const fechaDate = fechaUTC(fecha);
+
+    const menuExistente = await MenuDia.findOne({ fecha: fechaDate, nombre: nombre.trim() });
     if (menuExistente) {
-      return res.status(400).json({ 
-        error: 'Ya existe un menú con este nombre para esta fecha' 
-      });
+      return res.status(400).json({ error: 'Ya existe un menú con este nombre para esta fecha' });
     }
-    
+
     const categoriasCompletas = await Promise.all(
       categorias.map(async (cat) => {
         const platosCompletos = await Promise.all(
           cat.platos.map(async (p) => {
             const plato = await Plato.findById(p.platoId);
-            if (!plato) {
-              throw new Error(`Plato con ID ${p.platoId} no encontrado`);
-            }
+            if (!plato) throw new Error(`Plato con ID ${p.platoId} no encontrado`);
             return {
               platoId: p.platoId,
               nombre: plato.nombre,
@@ -122,14 +104,10 @@ exports.create = async (req, res) => {
             };
           })
         );
-        
-        return {
-          nombre: cat.nombre,
-          platos: platosCompletos
-        };
+        return { nombre: cat.nombre, platos: platosCompletos };
       })
     );
-    
+
     const nuevoMenu = new MenuDia({
       fecha: fechaDate,
       nombre: nombre.trim(),
@@ -138,7 +116,7 @@ exports.create = async (req, res) => {
       precioCompleto: precioCompleto || 0,
       activo: true
     });
-    
+
     await nuevoMenu.save();
     emitirActualizacion('menu-creado', nuevoMenu);
     res.status(201).json(nuevoMenu);
@@ -150,44 +128,32 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { fecha, nombre, descripcion, categorias, precioCompleto, activo } = req.body;
-    
+
     const menu = await MenuDia.findById(req.params.id);
-    if (!menu) {
-      return res.status(404).json({ error: 'Menú no encontrado' });
+    if (!menu) return res.status(404).json({ error: 'Menú no encontrado' });
+
+    if (fecha) {
+      menu.fecha = fechaUTC(fecha);
     }
 
-    // ===== FIX: actualizar fecha si viene en el body =====
-    if (fecha) {
-      const fechaStr = fecha.split('T')[0];
-      const fechaNueva = new Date(fechaStr + 'T00:00:00.000Z');
-      menu.fecha = fechaNueva;
-    }
-    
     if (nombre && nombre.trim() !== menu.nombre) {
-      const fechaMenu = menu.fecha;
-      
       const menuConMismoNombre = await MenuDia.findOne({
         _id: { $ne: req.params.id },
-        fecha: fechaMenu,
+        fecha: menu.fecha,
         nombre: nombre.trim()
       });
-      
       if (menuConMismoNombre) {
-        return res.status(400).json({ 
-          error: 'Ya existe un menú con este nombre para esta fecha' 
-        });
+        return res.status(400).json({ error: 'Ya existe un menú con este nombre para esta fecha' });
       }
     }
-    
+
     if (categorias) {
       const categoriasCompletas = await Promise.all(
         categorias.map(async (cat) => {
           const platosCompletos = await Promise.all(
             cat.platos.map(async (p) => {
               const plato = await Plato.findById(p.platoId);
-              if (!plato) {
-                throw new Error(`Plato con ID ${p.platoId} no encontrado`);
-              }
+              if (!plato) throw new Error(`Plato con ID ${p.platoId} no encontrado`);
               return {
                 platoId: p.platoId,
                 nombre: plato.nombre,
@@ -196,29 +162,23 @@ exports.update = async (req, res) => {
               };
             })
           );
-          
-          return {
-            nombre: cat.nombre,
-            platos: platosCompletos
-          };
+          return { nombre: cat.nombre, platos: platosCompletos };
         })
       );
       menu.categorias = categoriasCompletas;
     }
-    
+
     if (nombre) menu.nombre = nombre.trim();
     if (descripcion !== undefined) menu.descripcion = descripcion;
     if (precioCompleto !== undefined) menu.precioCompleto = precioCompleto;
     if (activo !== undefined) menu.activo = activo;
-    
+
     await menu.save();
     emitirActualizacion('menu-actualizado', menu);
     res.json(menu);
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ 
-        error: 'Ya existe un menú con este nombre para esta fecha' 
-      });
+      return res.status(400).json({ error: 'Ya existe un menú con este nombre para esta fecha' });
     }
     res.status(400).json({ error: error.message });
   }
@@ -227,9 +187,7 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
   try {
     const menu = await MenuDia.findByIdAndDelete(req.params.id);
-    if (!menu) {
-      return res.status(404).json({ error: 'Menú no encontrado' });
-    }
+    if (!menu) return res.status(404).json({ error: 'Menú no encontrado' });
     emitirActualizacion('menu-eliminado', req.params.id);
     res.json({ message: 'Menú eliminado correctamente' });
   } catch (error) {
@@ -240,13 +198,9 @@ exports.delete = async (req, res) => {
 exports.toggle = async (req, res) => {
   try {
     const menu = await MenuDia.findById(req.params.id);
-    if (!menu) {
-      return res.status(404).json({ error: 'Menú no encontrado' });
-    }
-    
+    if (!menu) return res.status(404).json({ error: 'Menú no encontrado' });
     menu.activo = !menu.activo;
     await menu.save();
-    
     emitirActualizacion('menu-actualizado', menu);
     res.json(menu);
   } catch (error) {
@@ -258,25 +212,18 @@ exports.updateDisponibilidadPlato = async (req, res) => {
   try {
     const { menuId, platoId } = req.params;
     const { disponible } = req.body;
-    
+
     const menu = await MenuDia.findById(menuId);
-    if (!menu) {
-      return res.status(404).json({ error: 'Menú no encontrado' });
-    }
-    
+    if (!menu) return res.status(404).json({ error: 'Menú no encontrado' });
+
     let platoEncontrado = false;
     menu.categorias.forEach(cat => {
       const plato = cat.platos.find(p => p.platoId.toString() === platoId);
-      if (plato) {
-        plato.disponible = disponible;
-        platoEncontrado = true;
-      }
+      if (plato) { plato.disponible = disponible; platoEncontrado = true; }
     });
-    
-    if (!platoEncontrado) {
-      return res.status(404).json({ error: 'Plato no encontrado en este menú' });
-    }
-    
+
+    if (!platoEncontrado) return res.status(404).json({ error: 'Plato no encontrado en este menú' });
+
     await menu.save();
     emitirActualizacion('menu-actualizado', menu);
     res.json(menu);
