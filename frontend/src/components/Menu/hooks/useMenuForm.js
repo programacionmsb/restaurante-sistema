@@ -10,6 +10,21 @@ const FORM_VACIO = {
   categorias: [],
 };
 
+// Obtiene fecha local como string YYYY-MM-DD sin desfase UTC
+const getFechaLocalStr = (fecha = new Date()) => {
+  const d = new Date(fecha);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Obtiene fecha UTC como string YYYY-MM-DD (para leer fechas del backend)
+const getFechaUTCStr = (fecha) => {
+  const d = new Date(fecha);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+};
+
 export const useMenuForm = (onGuardado) => {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [esNuevoMenu, setEsNuevoMenu] = useState(false);
@@ -27,7 +42,8 @@ export const useMenuForm = (onGuardado) => {
     setMenuSeleccionado(null);
     setForm({
       ...FORM_VACIO,
-      fechaSeleccionada: fecha || new Date().toISOString().split('T')[0],
+      // Si viene fecha del grid (Date object), usar local; si no, fecha de hoy local
+      fechaSeleccionada: fecha ? getFechaLocalStr(fecha) : getFechaLocalStr(),
     });
     setModoEdicion(true);
   };
@@ -45,7 +61,8 @@ export const useMenuForm = (onGuardado) => {
       nombreMenu: menu.nombre,
       descripcionMenu: menu.descripcion || '',
       precioCompleto: menu.precioCompleto || 0,
-      fechaSeleccionada: (() => { const d = new Date(menu.fecha); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; })(),
+      // Leer fecha del backend en UTC para no perder un día
+      fechaSeleccionada: getFechaUTCStr(menu.fecha),
       categorias: categoriasParaEdicion,
     });
     setModoEdicion(true);
