@@ -149,16 +149,22 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const { nombre, descripcion, categorias, precioCompleto, activo } = req.body;
+    const { fecha, nombre, descripcion, categorias, precioCompleto, activo } = req.body;
     
     const menu = await MenuDia.findById(req.params.id);
     if (!menu) {
       return res.status(404).json({ error: 'Menú no encontrado' });
     }
+
+    // ===== FIX: actualizar fecha si viene en el body =====
+    if (fecha) {
+      const fechaStr = fecha.split('T')[0];
+      const fechaNueva = new Date(fechaStr + 'T00:00:00.000Z');
+      menu.fecha = fechaNueva;
+    }
     
     if (nombre && nombre.trim() !== menu.nombre) {
-      const fechaMenu = new Date(menu.fecha);
-      fechaMenu.setUTCHours(0, 0, 0, 0);
+      const fechaMenu = menu.fecha;
       
       const menuConMismoNombre = await MenuDia.findOne({
         _id: { $ne: req.params.id },
