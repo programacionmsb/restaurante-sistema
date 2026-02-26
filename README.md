@@ -1,6 +1,6 @@
 # 🍽️ RestaurantePRO - Sistema de Gestión de Restaurante
 
-> Generado automáticamente el 25/02/2026 · [generate-readme.js]
+> Generado automáticamente el 26/02/2026 · [generate-readme.js]
 
 Sistema completo de gestión para restaurantes con tiempo real, roles y permisos, créditos, menús semanales y control de cocina.
 

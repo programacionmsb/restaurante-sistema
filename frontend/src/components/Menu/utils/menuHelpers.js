@@ -24,10 +24,13 @@ export const getDiasSemanales = (semanaActual) => {
   return dias;
 };
 
+// Compara fechas usando partes UTC para evitar problemas de zona horaria
 export const getMenusPorFecha = (menus, fecha) => {
   const fechaStr = fecha.toISOString().split('T')[0];
   return menus.filter(m => {
-    const menuFecha = new Date(m.fecha).toISOString().split('T')[0];
+    const d = new Date(m.fecha);
+    // Usar partes UTC directamente para evitar desfase por zona horaria
+    const menuFecha = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
     return menuFecha === fechaStr;
   });
 };
