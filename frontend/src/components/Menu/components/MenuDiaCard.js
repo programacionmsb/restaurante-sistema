@@ -86,11 +86,20 @@ export const MenuDiaCard = ({
                 {!menu.activo && <span style={{ fontSize: '0.625rem', marginLeft: '0.25rem' }}>(Oculto)</span>}
               </div>
 
-              {menu.precioCompleto > 0 && (
+              {/* Precios */}
+              {menu.precios && menu.precios.length > 0 ? (
+                <div style={{ marginBottom: '0.5rem' }}>
+                  {menu.precios.map((p, i) => (
+                    <div key={i} style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: '600' }}>
+                      {p.nombre}: S/ {parseFloat(p.precio).toFixed(2)}
+                    </div>
+                  ))}
+                </div>
+              ) : menu.precioCompleto > 0 ? (
                 <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600', marginBottom: '0.5rem' }}>
                   S/ {menu.precioCompleto.toFixed(2)}
                 </div>
-              )}
+              ) : null}
 
               <div style={{ display: 'flex', gap: '0.25rem' }}>
                 <ProtectedAction permisos={['menu.editar']}>

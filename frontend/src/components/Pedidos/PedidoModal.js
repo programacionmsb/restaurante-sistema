@@ -21,6 +21,7 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
   const [itemDescuento, setItemDescuento] = useState(null);
   // ===== NUEVO: filtro de búsqueda =====
   const [busquedaPlato, setBusquedaPlato] = useState('');
+  const [preciosMenuSeleccionado, setPreciosMenuSeleccionado] = useState({}); // menuId -> precio seleccionado
 
   useEffect(() => { cargarDatos(); }, []);
 
@@ -195,7 +196,13 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
       if (item.esMenuExpandido && item.menuId && !menusSumados.has(item.menuId)) {
         menusSumados.add(item.menuId);
         const menu = menusDelDia.find(m => m._id === item.menuId);
-        if (menu && menu.precioCompleto > 0) {
+        // Usar precio seleccionado del combobox si existe
+        const precioElegido = preciosMenuSeleccionado[item.menuId];
+        if (precioElegido) {
+          total += precioElegido * item.cantidad;
+        } else if (menu && menu.precios && menu.precios.length > 0) {
+          total += menu.precios[0].precio * item.cantidad;
+        } else if (menu && menu.precioCompleto > 0) {
           total += menu.precioCompleto * item.cantidad;
         } else {
           Object.values(items)
@@ -339,11 +346,11 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
                       </h4>
                       {menusFiltrados.map(menu => {
                         const cantidadMenu = getCantidadMenu(menu._id);
-                        // CORRECCIÓN: usar solo precioCompleto
-                        const precioMenu = menu.precioCompleto || 0;
+                        const preciosMenu = menu.precios && menu.precios.length > 0 ? menu.precios : (menu.precioCompleto > 0 ? [{ nombre: 'General', precio: menu.precioCompleto }] : []);
+                        const precioSeleccionado = preciosMenuSeleccionado[menu._id] || (preciosMenu.length > 0 ? preciosMenu[0].precio : 0);
 
                         return (
-                          <div key={menu._id} className="plato-item" style={{ background: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '0.75rem', border: '1px solid #fbcfe8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div key={menu._id} className="plato-item" style={{ background: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '0.75rem', border: '1px solid #fbcfe8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                             <div className="plato-info" style={{ flex: 1 }}>
                               <div className="plato-nombre" style={{ fontWeight: '700', color: '#831843', fontSize: '1rem' }}>{menu.nombre}</div>
                               {menu.descripcion && <div style={{ fontSize: '0.75rem', color: '#9f1239', marginTop: '0.25rem' }}>{menu.descripcion}</div>}
@@ -354,9 +361,24 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
                                   </div>
                                 ))}
                               </div>
-                              <div className="plato-precio" style={{ fontSize: '0.875rem', fontWeight: '700', color: '#10b981', marginTop: '0.5rem' }}>
-                                {precioMenu > 0 ? `S/ ${precioMenu.toFixed(2)}` : 'Sin precio definido'}
-                              </div>
+                              {/* Selector de precio */}
+                              {preciosMenu.length > 1 ? (
+                                <div style={{ marginTop: '0.5rem' }}>
+                                  <select
+                                    value={precioSeleccionado}
+                                    onChange={(e) => setPreciosMenuSeleccionado(prev => ({ ...prev, [menu._id]: parseFloat(e.target.value) }))}
+                                    style={{ padding: '0.4rem 0.5rem', border: '2px solid #fbcfe8', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: '700', color: '#10b981', background: 'white', cursor: 'pointer' }}
+                                  >
+                                    {preciosMenu.map((p, i) => (
+                                      <option key={i} value={p.precio}>{p.nombre} — S/ {parseFloat(p.precio).toFixed(2)}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ) : (
+                                <div className="plato-precio" style={{ fontSize: '0.875rem', fontWeight: '700', color: '#10b981', marginTop: '0.5rem' }}>
+                                  {preciosMenu.length > 0 ? `${preciosMenu[0].nombre} — S/ ${parseFloat(preciosMenu[0].precio).toFixed(2)}` : 'Sin precio definido'}
+                                </div>
+                              )}
                             </div>
                             <div className="plato-cantidad">
                               <button className="btn-cantidad" onClick={() => cambiarCantidadMenu(menu, -1)}><Minus size={16} /></button>

@@ -1,28 +1,22 @@
 import { useState } from 'react';
 import { menuAPI } from '../../../services/apiMenu';
-import { getPlatoInfo } from '../utils/menuHelpers';
 
 const FORM_VACIO = {
   nombreMenu: '',
   descripcionMenu: '',
-  precioCompleto: 0,
+  precios: [],
   fechaSeleccionada: '',
   categorias: [],
 };
 
-// Obtiene fecha local como string YYYY-MM-DD sin desfase UTC
 const getFechaLocalStr = (fecha = new Date()) => {
   const d = new Date(fecha);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
 
-// Obtiene fecha UTC como string YYYY-MM-DD (para leer fechas del backend)
 const getFechaUTCStr = (fecha) => {
   const d = new Date(fecha);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
 };
 
 export const useMenuForm = (onGuardado) => {
@@ -42,8 +36,7 @@ export const useMenuForm = (onGuardado) => {
     setMenuSeleccionado(null);
     setForm({
       ...FORM_VACIO,
-      // Si viene fecha del grid (Date object), usar local; si no, fecha de hoy local
-      fechaSeleccionada: fecha ? getFechaLocalStr(fecha) : getFechaLocalStr(),
+      fechaSeleccionada: fecha ? getFechaLocalStr(new Date(fecha + 'T12:00:00')) : getFechaLocalStr(),
     });
     setModoEdicion(true);
   };
@@ -60,8 +53,11 @@ export const useMenuForm = (onGuardado) => {
     setForm({
       nombreMenu: menu.nombre,
       descripcionMenu: menu.descripcion || '',
-      precioCompleto: menu.precioCompleto || 0,
-      // Leer fecha del backend en UTC para no perder un día
+      precios: menu.precios && menu.precios.length > 0
+        ? menu.precios.map(p => ({ nombre: p.nombre, precio: p.precio }))
+        : menu.precioCompleto > 0
+          ? [{ nombre: 'General', precio: menu.precioCompleto }]
+          : [],
       fechaSeleccionada: getFechaUTCStr(menu.fecha),
       categorias: categoriasParaEdicion,
     });
@@ -110,7 +106,7 @@ export const useMenuForm = (onGuardado) => {
   // ========== GUARDAR ==========
 
   const handleGuardarMenu = async () => {
-    const { nombreMenu, fechaSeleccionada, categorias, descripcionMenu, precioCompleto } = form;
+    const { nombreMenu, fechaSeleccionada, categorias, descripcionMenu, precios } = form;
 
     if (!nombreMenu.trim()) return alert('El nombre del menú es obligatorio');
     if (!fechaSeleccionada) return alert('Selecciona una fecha para el menú');
@@ -118,13 +114,20 @@ export const useMenuForm = (onGuardado) => {
     const totalPlatos = categorias.reduce((sum, cat) => sum + cat.platos.length, 0);
     if (totalPlatos === 0) return alert('Agrega al menos un plato al menú');
 
+    // Validar precios — filtrar vacíos
+    const preciosValidos = precios.filter(p => p.nombre && p.nombre.trim() && p.precio !== '' && !isNaN(p.precio));
+
+    // precioCompleto = primer precio para compatibilidad con pedidos
+    const precioCompleto = preciosValidos.length > 0 ? parseFloat(preciosValidos[0].precio) : 0;
+
     try {
       const menuData = {
         fecha: fechaSeleccionada,
         nombre: nombreMenu.trim(),
         descripcion: descripcionMenu,
         categorias,
-        precioCompleto: parseFloat(precioCompleto) || 0,
+        precios: preciosValidos.map(p => ({ nombre: p.nombre.trim(), precio: parseFloat(p.precio) })),
+        precioCompleto,
       };
 
       if (esNuevoMenu) {
