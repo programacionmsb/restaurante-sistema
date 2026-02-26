@@ -33,6 +33,12 @@ const menuDiaSchema = new mongoose.Schema({
       }
     }]
   }],
+  // Lista de precios por tipo de cliente/destino
+  precios: [{
+    nombre: { type: String, required: true },
+    precio: { type: Number, required: true, default: 0 }
+  }],
+  // Mantener precioCompleto por compatibilidad con pedidos existentes
   precioCompleto: {
     type: Number,
     default: 0

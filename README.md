@@ -215,8 +215,8 @@ restaurante-sistema/
         │   ├── Reportes/
         │   │   └── ReportesView.js
         │   ├── Roles/
-        │   │   └── RolModal.js
         │   │   └── RolesList.js
+        │   │   └── RolModal.js
         │   └── Usuarios/
         │       └── UsuarioModal.js
         │       └── UsuariosList.js
