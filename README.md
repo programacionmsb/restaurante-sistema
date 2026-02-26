@@ -73,6 +73,10 @@ Crear, editar y eliminar pedidos. Soporte para platos sueltos y menús completos
 ### 🍽️ Platos
 Gestión de platos por categoría con activar/desactivar disponibilidad.
 
+**Hooks:** `usePlatos.js`
+
+**Componentes:** `PlatoCard.js`, `PlatosGrid.js`, `PlatosHeader.js`, `PlatosTabs.js`
+
 ### 📊 Reportes
 Reportes de ventas, pedidos y métricas del negocio.
 
@@ -210,8 +214,17 @@ restaurante-sistema/
         │   │   └── PedidoModal.js
         │   │   └── PedidosList.js
         │   ├── Platos/
+        │   │   ├── components/
+        │   │   │   └── PlatoCard.js
+        │   │   │   └── PlatosGrid.js
+        │   │   │   └── PlatosHeader.js
+        │   │   │   └── PlatosTabs.js
+        │   │   ├── hooks/
+        │   │   │   └── usePlatos.js
+        │   │   └── utils/
+        │   │       └── platosHelpers.js
         │   │   └── PlatoModal.js
-        │   │   └── PlatosList.js
+        │   │   └── PlatosView.js
         │   ├── Reportes/
         │   │   └── ReportesView.js
         │   ├── Roles/

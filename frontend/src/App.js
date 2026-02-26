@@ -7,7 +7,7 @@ import RolesList from './components/Roles/RolesList';
 import UsuariosList from './components/Usuarios/UsuariosList';
 import PedidosList from './components/Pedidos/PedidosList';
 import CocinaView from './components/Cocina/CocinaView';
-import PlatosList from './components/Platos/PlatosList';
+import PlatosList from './components/Platos/PlatosView';
 import MenuView from './components/Menu/MenuView';
 import CajaView from './components/Caja/CajaView';
 import ReportesView from './components/Reportes/ReportesView';
