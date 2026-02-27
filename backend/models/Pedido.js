@@ -41,6 +41,14 @@ const pedidoSchema = new mongoose.Schema({
     esMenuExpandido: {
       type: Boolean,
       default: false
+    },
+    menuId: {
+      type: String,
+      default: ''
+    },
+    precioMenuUsado: {
+      type: Number,
+      default: 0
     }
     // ===== FIN CAMPOS MENÚ =====
   }],
