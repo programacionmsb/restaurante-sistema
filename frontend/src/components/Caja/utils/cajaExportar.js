@@ -77,8 +77,10 @@ export const exportarExcelCaja = (stats, filtroFecha, fechaPersonalizada, report
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
   const ahora = new Date();
+  const dias = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+  const dia = dias[ahora.getDay()];
   const fechaHora = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')}_${String(ahora.getHours()).padStart(2,'0')}-${String(ahora.getMinutes()).padStart(2,'0')}-${String(ahora.getSeconds()).padStart(2,'0')}`;
-  link.setAttribute('download', `caja_${fechaHora}.csv`);
+  link.setAttribute('download', `caja_${dia}_${fechaHora}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
