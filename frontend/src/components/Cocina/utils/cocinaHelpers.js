@@ -36,6 +36,13 @@ export const calcularEstadisticasItems = (pedidos, filtroCliente = 'todos') => {
 };
 
 // ========== ESTADÍSTICAS POR DESTINO ==========
+const getDestino = (mesa) => {
+  if (!mesa) return 'MESA';
+  if (mesa.startsWith('DELIVERY:')) return 'DELIVERY';
+  if (mesa.startsWith('OTRO:')) return 'OTRO';
+  return 'MESA';
+};
+
 export const obtenerDestinosUnicos = (pedidos) => {
   const destinos = new Set();
   pedidos.forEach(p => { if (p.mesa) destinos.add(p.mesa); });
