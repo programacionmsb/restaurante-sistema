@@ -15,6 +15,7 @@ export const PedidoCard = ({
     <div className={`pedido-card ${pedido.estado} ${pedido.cancelado ? 'cancelado' : ''}`}>
       <div className="pedido-header">
         <div>
+          <div className="pedido-mesa">{pedido.mesa}</div>
           <div className="pedido-cliente">{pedido.cliente}</div>
         </div>
       </div>
