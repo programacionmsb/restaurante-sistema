@@ -51,11 +51,14 @@ const expandirItemsMenu = async (items) => {
 exports.getPedidosHoy = async (req, res) => {
   try {
     const { usuarioId } = req.query;
-    
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    
-    let filtro = { createdAt: { $gte: hoy } };
+
+    // Calcular inicio del día en hora Perú (UTC-5)
+    const ahora = new Date();
+    const ahoraPeru = new Date(ahora.getTime() - 5 * 60 * 60 * 1000);
+    const hoyStr = ahoraPeru.toISOString().split('T')[0];
+    const inicio = new Date(hoyStr + 'T05:00:00.000Z'); // medianoche Perú = 05:00 UTC
+
+    let filtro = { createdAt: { $gte: inicio } };
     
     if (usuarioId) {
       const usuario = await Usuario.findById(usuarioId).populate('rol');
@@ -87,11 +90,12 @@ exports.getPedidosPorRango = async (req, res) => {
       return res.status(400).json({ error: 'Debe proporcionar fechaInicio y fechaFin' });
     }
 
-    const inicio = new Date(fechaInicio);
-    inicio.setHours(0, 0, 0, 0);
-    
-    const fin = new Date(fechaFin);
-    fin.setHours(23, 59, 59, 999);
+    // Interpretar las fechas como días en hora Perú (UTC-5)
+    // Medianoche Perú = 05:00 UTC, fin del día Perú = 04:59:59.999 UTC del día siguiente
+    const inicio = new Date(fechaInicio + 'T05:00:00.000Z');
+    const fin = new Date(fechaFin + 'T05:00:00.000Z');
+    fin.setUTCDate(fin.getUTCDate() + 1);
+    fin.setTime(fin.getTime() - 1);
 
     let filtro = { 
       createdAt: { 
