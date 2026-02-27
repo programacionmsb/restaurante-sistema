@@ -21,6 +21,7 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
   const [itemDescuento, setItemDescuento] = useState(null);
   // ===== NUEVO: filtro de búsqueda =====
   const [busquedaPlato, setBusquedaPlato] = useState('');
+  const [busquedaCliente, setBusquedaCliente] = useState('');
   const [preciosMenuSeleccionado, setPreciosMenuSeleccionado] = useState({}); // menuId -> precio seleccionado
 
   useEffect(() => { cargarDatos(); }, []);
@@ -313,9 +314,19 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
               <div className="pedido-form-info">
                 <div className="form-group">
                   <label className="form-label">Cliente *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Buscar cliente..."
+                    value={busquedaCliente}
+                    onChange={(e) => setBusquedaCliente(e.target.value)}
+                    style={{ marginBottom: '0.5rem' }}
+                  />
                   <select className="form-input" value={formData.cliente} onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}>
                     <option value="">-- Seleccionar Cliente --</option>
-                    {clientes.map(c => <option key={c._id} value={c.nombre}>{c.nombre}</option>)}
+                    {clientes
+                      .filter(c => c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase()))
+                      .map(c => <option key={c._id} value={c.nombre}>{c.nombre}</option>)}
                   </select>
                 </div>
                 <div className="form-group pedido-form-tipo">
