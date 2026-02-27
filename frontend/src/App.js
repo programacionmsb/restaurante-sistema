@@ -201,7 +201,7 @@ export default function App() {
               }}
             >
               <LogOut size={16} />
-              Salir
+              <span className="app-logout-text">Salir</span>
             </button>
           </div>
         </div>
