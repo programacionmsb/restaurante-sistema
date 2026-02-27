@@ -12,6 +12,7 @@ import {
   filtrarPedidos,
   obtenerMeserosUnicos,
   obtenerClientesUnicos,
+  obtenerDestinosUnicos,
 } from './utils/cocinaHelpers';
 import './cocina.css';
 
@@ -51,6 +52,7 @@ export default function CocinaView() {
 
   const clientes = obtenerClientesUnicos(pedidosFiltrados);
   const meseros = obtenerMeserosUnicos(pedidos);
+  const destinos = obtenerDestinosUnicos(pedidos);
 
   if (loading) {
     return (
@@ -85,6 +87,7 @@ export default function CocinaView() {
           filtroCliente={filtroCliente}
           onCambiarFiltroCliente={setFiltroCliente}
           itemsStatsPorDestino={itemsStatsPorDestino}
+          destinos={destinos}
           filtroDestino={filtroDestino}
           onCambiarFiltroDestino={setFiltroDestino}
         />

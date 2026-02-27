@@ -108,6 +108,15 @@ const ItemsGrid = ({ items }) => {
   );
 };
 
+// ========== HELPER DISPLAY DESTINO ==========
+const formatDestino = (mesa) => {
+  if (!mesa) return mesa;
+  if (mesa.startsWith('MESA:')) return `🪑 ${mesa.replace('MESA:', '').trim()}`;
+  if (mesa.startsWith('DELIVERY:')) return `🛵 ${mesa.replace('DELIVERY:', '').trim()}`;
+  if (mesa.startsWith('OTRO:')) return `📦 ${mesa.replace('OTRO:', '').trim()}`;
+  return mesa;
+};
+
 // ========== COMPONENTE PRINCIPAL ==========
 export const CocinaEstadisticas = ({
   pedidosPendientes,
@@ -118,6 +127,7 @@ export const CocinaEstadisticas = ({
   filtroCliente,
   onCambiarFiltroCliente,
   itemsStatsPorDestino,
+  destinos = [],
   filtroDestino,
   onCambiarFiltroDestino,
 }) => {
@@ -207,9 +217,9 @@ export const CocinaEstadisticas = ({
               }}
             >
               <option value="todos">Todos los destinos</option>
-              <option value="MESA">🪑 Mesa</option>
-              <option value="DELIVERY">🛵 Delivery</option>
-              <option value="OTRO">📦 Otro</option>
+              {destinos.map(destino => (
+                <option key={destino} value={destino}>{formatDestino(destino)}</option>
+              ))}
             </select>
             {filtroDestino !== 'todos' && (
               <button
@@ -220,7 +230,7 @@ export const CocinaEstadisticas = ({
                   fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer'
                 }}
               >
-                {filtroDestino === 'MESA' ? '🪑' : filtroDestino === 'DELIVERY' ? '🛵' : '📦'} {filtroDestino} &times;
+                {formatDestino(filtroDestino)} &times;
               </button>
             )}
           </div>

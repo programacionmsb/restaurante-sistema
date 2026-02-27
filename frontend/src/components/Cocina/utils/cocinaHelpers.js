@@ -36,18 +36,17 @@ export const calcularEstadisticasItems = (pedidos, filtroCliente = 'todos') => {
 };
 
 // ========== ESTADÍSTICAS POR DESTINO ==========
-const getDestino = (mesa) => {
-  if (!mesa) return 'MESA';
-  if (mesa.startsWith('DELIVERY:')) return 'DELIVERY';
-  if (mesa.startsWith('OTRO:')) return 'OTRO';
-  return 'MESA';
+export const obtenerDestinosUnicos = (pedidos) => {
+  const destinos = new Set();
+  pedidos.forEach(p => { if (p.mesa) destinos.add(p.mesa); });
+  return Array.from(destinos).sort();
 };
 
 export const calcularEstadisticasItemsPorDestino = (pedidos, filtroDestino = 'todos') => {
   const itemsMap = {};
   const pedidosFiltrados = filtroDestino === 'todos'
     ? pedidos
-    : pedidos.filter(p => getDestino(p.mesa) === filtroDestino);
+    : pedidos.filter(p => p.mesa === filtroDestino);
 
   pedidosFiltrados.forEach(pedido => {
     pedido.items.forEach(item => {
