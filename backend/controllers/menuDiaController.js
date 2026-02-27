@@ -7,8 +7,10 @@ const fechaUTC = (str) => new Date(str.split('T')[0] + 'T00:00:00.000Z');
 
 exports.getHoy = async (req, res) => {
   try {
-    const hoy = new Date();
-    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+    // Calcular fecha actual en hora Perú (UTC-5)
+    const ahora = new Date();
+    const ahoraPeru = new Date(ahora.getTime() - 5 * 60 * 60 * 1000);
+    const hoyStr = `${ahoraPeru.getUTCFullYear()}-${String(ahoraPeru.getUTCMonth()+1).padStart(2,'0')}-${String(ahoraPeru.getUTCDate()).padStart(2,'0')}`;
     const inicio = fechaUTC(hoyStr);
     const fin = new Date(inicio);
     fin.setUTCDate(fin.getUTCDate() + 1);
