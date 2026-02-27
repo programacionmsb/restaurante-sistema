@@ -40,6 +40,7 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
       }
       setFormData({ cliente: pedidoEditar.cliente, mesa: mesaVal });
       const itemsObj = {};
+      const preciosMenuInit = {};
       pedidoEditar.items.forEach((item, index) => {
         const tempId = `temp-${index}`;
         itemsObj[tempId] = {
@@ -48,10 +49,17 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
           motivoDescuento: item.motivoDescuento || '', usuarioDescuento: item.usuarioDescuento || '',
           observaciones: item.observaciones || '', categoria: item.categoria || '',
           menuNombre: item.menuNombre || '', esMenuExpandido: item.esMenuExpandido || false,
-          menuId: item.menuId || ''
+          menuId: item.menuId || '', precioMenuUsado: item.precioMenuUsado || 0
         };
+        // Recuperar el precio de menú guardado
+        if (item.esMenuExpandido && item.menuId && item.precioMenuUsado) {
+          preciosMenuInit[item.menuId] = item.precioMenuUsado;
+        }
       });
       setItems(itemsObj);
+      if (Object.keys(preciosMenuInit).length > 0) {
+        setPreciosMenuSeleccionado(preciosMenuInit);
+      }
     }
   }, [pedidoEditar]);
 
@@ -231,8 +239,21 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
       } catch (e) { console.error('Error al obtener usuario:', e); }
     }
 
+    // Enriquecer items de menú con el precio usado para poder recuperarlo al editar
+    const itemsConPrecio = itemsArray.map(item => {
+      if (item.esMenuExpandido && item.menuId) {
+        const menu = menusDelDia.find(m => m._id === item.menuId);
+        const precioElegido = preciosMenuSeleccionado[item.menuId];
+        const precioMenuUsado = precioElegido ||
+          (menu?.precios?.length > 0 ? menu.precios[0].precio : 0) ||
+          (menu?.precioCompleto > 0 ? menu.precioCompleto : 0);
+        return { ...item, precioMenuUsado };
+      }
+      return item;
+    });
+
     const pedidoData = {
-      cliente: formData.cliente, mesa: mesaFormateada, items: itemsArray,
+      cliente: formData.cliente, mesa: mesaFormateada, items: itemsConPrecio,
       total: calcularTotal(), totalDescuentos: calcularDescuentoTotal(),
       hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
       usuarioCreador
