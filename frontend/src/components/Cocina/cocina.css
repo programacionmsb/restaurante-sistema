@@ -212,3 +212,36 @@
 .cocina-vacio-subtexto {
   color: #9ca3af;
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .cocina-header {
+    padding: 1rem;
+  }
+
+  .cocina-main {
+    padding: 1rem;
+  }
+
+  .cocina-pedidos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cocina-pedido-card {
+    padding: 1.25rem;
+  }
+
+  .cocina-pedido-mesa {
+    font-size: 1.5rem;
+  }
+
+  .cocina-stat-value {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .cocina-pedidos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}

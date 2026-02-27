@@ -133,7 +133,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
-      <header style={{
+      <header className="app-main-header" style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
         padding: '1rem 2rem',
@@ -176,7 +176,7 @@ export default function App() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ textAlign: 'right' }}>
+            <div className="app-nav-user" style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '0.875rem', fontWeight: '600' }}>
                 {usuario.nombre}
               </div>

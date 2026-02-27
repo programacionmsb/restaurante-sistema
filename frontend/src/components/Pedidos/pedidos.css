@@ -366,3 +366,69 @@
   font-size: 1.25rem;
   color: #1f2937;
 }
+
+/* Grids del modal de pedido (usados para media queries) */
+.pedido-form-info {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+}
+
+.pedido-form-tipo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .pedidos-header {
+    padding: 1rem;
+  }
+
+  .pedidos-main {
+    padding: 1rem;
+  }
+
+  .pedidos-tabs {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .pedido-tab {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .pedidos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .crear-pedido-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resumen-pedido {
+    border-left: none;
+    padding-left: 0;
+    border-top: 2px solid #e5e7eb;
+    padding-top: 1.5rem;
+  }
+
+  .platos-section {
+    max-height: 280px;
+  }
+
+  .pedido-form-info {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .pedido-form-tipo {
+    grid-template-columns: 1fr;
+  }
+}

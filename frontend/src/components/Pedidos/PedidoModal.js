@@ -310,7 +310,7 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
           ) : (
             <>
               {/* Información básica */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '0.75rem' }}>
+              <div className="pedido-form-info">
                 <div className="form-group">
                   <label className="form-label">Cliente *</label>
                   <select className="form-input" value={formData.cliente} onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}>
@@ -318,7 +318,7 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
                     {clientes.map(c => <option key={c._id} value={c.nombre}>{c.nombre}</option>)}
                   </select>
                 </div>
-                <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group pedido-form-tipo">
                   <div>
                     <label className="form-label">Tipo *</label>
                     <select className="form-input" value={tipoMesa} onChange={(e) => { setTipoMesa(e.target.value); setDetalleMesa(''); }}>

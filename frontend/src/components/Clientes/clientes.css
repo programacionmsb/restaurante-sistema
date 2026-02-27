@@ -302,3 +302,17 @@
 .loading-icon {
   margin-bottom: 1rem;
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .modal-content {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+  }
+}

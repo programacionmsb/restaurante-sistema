@@ -259,3 +259,36 @@
   background: #6b7280;
   border-color: #6b7280;
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .platos-header {
+    padding: 1rem;
+  }
+
+  .platos-main {
+    padding: 1rem;
+  }
+
+  .platos-tabs {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .plato-tab {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .platos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plato-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plato-tipo-selector {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
