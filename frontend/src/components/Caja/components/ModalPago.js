@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, Smartphone, CreditCard } from 'lucide-react';
+import { DollarSign, Smartphone, CreditCard, Clock } from 'lucide-react';
 
 export const ModalPago = ({ pedido, onClose, onPagar }) => {
   const [metodoPago, setMetodoPago] = useState('efectivo');
@@ -64,7 +64,7 @@ export const ModalPago = ({ pedido, onClose, onPagar }) => {
           <label style={{ display: 'block', fontWeight: '600', marginBottom: '0.5rem', color: '#374151' }}>
             Método de Pago
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
             <button
               onClick={() => setMetodoPago('efectivo')}
               style={{
@@ -122,8 +122,42 @@ export const ModalPago = ({ pedido, onClose, onPagar }) => {
               <CreditCard size={24} />
               Transfer.
             </button>
+            <button
+              onClick={() => setMetodoPago('credito')}
+              style={{
+                padding: '1rem',
+                background: metodoPago === 'credito' ? '#ef4444' : 'white',
+                color: metodoPago === 'credito' ? 'white' : '#374151',
+                border: '2px solid #ef4444',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <Clock size={24} />
+              Crédito
+            </button>
           </div>
         </div>
+
+        {metodoPago === 'credito' && (
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '1rem',
+            background: '#fef2f2',
+            border: '2px solid #ef4444',
+            borderRadius: '0.5rem',
+            color: '#991b1b',
+            fontSize: '0.875rem',
+            fontWeight: '600'
+          }}>
+            ⚠️ El pedido quedará registrado como crédito pendiente de cobro. Solo usuarios con permiso pueden autorizar créditos.
+          </div>
+        )}
 
         {metodoPago === 'efectivo' && (
           <div style={{ marginBottom: '1.5rem' }}>
@@ -173,7 +207,7 @@ export const ModalPago = ({ pedido, onClose, onPagar }) => {
             onClick={handlePagar}
             disabled={procesando}
           >
-            {procesando ? 'Procesando...' : 'Registrar Pago'}
+            {procesando ? 'Procesando...' : metodoPago === 'credito' ? 'Registrar Crédito' : 'Registrar Pago'}
           </button>
         </div>
       </div>
