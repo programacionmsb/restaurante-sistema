@@ -1,4 +1,4 @@
-export const exportarExcelCaja = (stats, filtroFecha, fechaPersonalizada) => {
+export const exportarExcelCaja = (stats, filtroFecha, fechaPersonalizada, reporteCreditos) => {
   const getFiltroLabel = () => {
     if (filtroFecha === 'hoy') return 'Hoy';
     if (filtroFecha === 'ayer') return 'Ayer';
@@ -11,32 +11,68 @@ export const exportarExcelCaja = (stats, filtroFecha, fechaPersonalizada) => {
     return '';
   };
 
-  let csv = 'Fecha/Hora;Mesa;Cliente;Método Pago;Total;Descuentos\n';
-  
-  stats.pedidosPagados.forEach(p => {
-    const fecha = new Date(p.createdAt).toLocaleString('es-PE');
-    const metodoPago = p.metodoPago === 'efectivo' ? 'Efectivo' : 
-                       p.metodoPago === 'yape' ? 'Yape' : 
-                       p.metodoPago === 'transferencia' ? 'Transferencia' : p.metodoPago;
-    
-    csv += `${fecha};${p.mesa};${p.cliente};${metodoPago};${p.total.toFixed(2)};${(p.totalDescuentos || 0).toFixed(2)}\n`;
-  });
+  const formatMetodo = (m) =>
+    m === 'efectivo' ? 'Efectivo' : m === 'yape' ? 'Yape' : m === 'transferencia' ? 'Transferencia' : m;
 
-  csv += '\n';
-  csv += 'RESUMEN DE CAJA\n';
+  const pct = (valor) =>
+    stats.totalCobrado > 0 ? ((valor / stats.totalCobrado) * 100).toFixed(1) + '%' : '0%';
+
+  const fechaReporte = new Date().toLocaleDateString('es-PE');
+  const horaReporte = new Date().toLocaleTimeString('es-PE');
+
+  let csv = '';
+
+  // ===== ENCABEZADO =====
+  csv += `RESTAURANTEPRO - REPORTE DE CAJA\n`;
   csv += `Período;${getFiltroLabel()}\n`;
+  csv += `Generado;${fechaReporte} ${horaReporte}\n`;
+  csv += '\n';
+
+  // ===== RESUMEN GENERAL =====
+  csv += 'RESUMEN GENERAL\n';
   csv += `Total Cobrado;S/ ${stats.totalCobrado.toFixed(2)}\n`;
-  csv += `Efectivo;S/ ${stats.porEfectivo.toFixed(2)}\n`;
-  csv += `Yape;S/ ${stats.porYape.toFixed(2)}\n`;
-  csv += `Transferencia;S/ ${stats.porTransferencia.toFixed(2)}\n`;
-  csv += `Descuentos;S/ ${stats.totalDescuentos.toFixed(2)}\n`;
   csv += `Pedidos Pagados;${stats.pedidosPagados.length}\n`;
   csv += `Por Cobrar;S/ ${stats.totalPorCobrar.toFixed(2)}\n`;
+  csv += `Pedidos Pendientes;${stats.pedidosPorCobrar.length}\n`;
+  if (reporteCreditos && reporteCreditos.resumen.totalDeuda > 0) {
+    csv += `Créditos Pendientes;S/ ${reporteCreditos.resumen.totalDeuda.toFixed(2)}\n`;
+    csv += `Clientes con Crédito;${reporteCreditos.resumen.cantidadClientes}\n`;
+  } else {
+    csv += `Descuentos Aplicados;S/ ${stats.totalDescuentos.toFixed(2)}\n`;
+  }
+  csv += '\n';
+
+  // ===== MÉTODOS DE PAGO =====
+  csv += 'MÉTODOS DE PAGO\n';
+  csv += 'Método;Cantidad;Total;Porcentaje\n';
+  csv += `Efectivo;${stats.pedidosPagados.filter(p => p.metodoPago === 'efectivo').length};S/ ${stats.porEfectivo.toFixed(2)};${pct(stats.porEfectivo)}\n`;
+  csv += `Yape;${stats.pedidosPagados.filter(p => p.metodoPago === 'yape').length};S/ ${stats.porYape.toFixed(2)};${pct(stats.porYape)}\n`;
+  csv += `Transferencia;${stats.pedidosPagados.filter(p => p.metodoPago === 'transferencia').length};S/ ${stats.porTransferencia.toFixed(2)};${pct(stats.porTransferencia)}\n`;
+  csv += `TOTAL;${stats.pedidosPagados.length};S/ ${stats.totalCobrado.toFixed(2)};100%\n`;
+  csv += '\n';
+
+  // ===== HISTORIAL DE PAGOS =====
+  csv += 'HISTORIAL DE PAGOS\n';
+  csv += 'Fecha/Hora;Mesa;Cliente;Método Pago;Total;Descuentos\n';
+  stats.pedidosPagados.forEach(p => {
+    const fecha = new Date(p.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    csv += `${fecha};${p.mesa};${p.cliente};${formatMetodo(p.metodoPago)};S/ ${p.total.toFixed(2)};S/ ${(p.totalDescuentos || 0).toFixed(2)}\n`;
+  });
+  csv += '\n';
+
+  // ===== PEDIDOS PENDIENTES DE COBRO =====
+  if (stats.pedidosPorCobrar.length > 0) {
+    csv += 'PEDIDOS PENDIENTES DE COBRO\n';
+    csv += 'Mesa;Cliente;Hora;Total\n';
+    stats.pedidosPorCobrar.forEach(p => {
+      const hora = p.createdAt ? new Date(p.createdAt).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '-';
+      csv += `${p.mesa};${p.cliente};${hora};S/ ${p.total.toFixed(2)}\n`;
+    });
+    csv += `;;;TOTAL POR COBRAR;S/ ${stats.totalPorCobrar.toFixed(2)}\n`;
+  }
 
   const BOM = '\uFEFF';
-  const csvConBOM = BOM + csv;
-
-  const blob = new Blob([csvConBOM], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);

@@ -56,7 +56,7 @@ export default function CajaView() {
   };
 
   const handleExportarExcel = () => {
-    exportarExcelCaja(stats, filtroFecha, fechaPersonalizada);
+    exportarExcelCaja(stats, filtroFecha, fechaPersonalizada, reporteCreditos);
   };
 
   const handleExportarPDF = () => {
