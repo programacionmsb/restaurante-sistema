@@ -127,6 +127,9 @@ export default function ReportesView() {
     .sort((a, b) => b.ingresos - a.ingresos)
     .slice(0, 10);
 
+  const todosProductos = Object.values(productosVendidos)
+    .sort((a, b) => b.cantidad - a.cantidad);
+
   // Ventas por día (para gráfico)
   const ventasPorDia = {};
   pedidosActivos.forEach(pedido => {
@@ -200,6 +203,16 @@ export default function ReportesView() {
       
       csv += `${fecha};${p.mesa};${p.cliente};${estado};${estadoPago};${metodoPago};${p.total.toFixed(2)};${(p.totalDescuentos || 0).toFixed(2)}\n`;
     });
+
+    // Sección de platos vendidos
+    csv += '\n';
+    csv += `RESUMEN POR PLATOS - ${getFiltroLabel()}\n`;
+    csv += 'Plato;Cantidad Vendida;Ingresos (S/);% del Total\n';
+    todosProductos.forEach(p => {
+      const porcentaje = totalVentas > 0 ? ((p.ingresos / totalVentas) * 100).toFixed(1) : '0.0';
+      csv += `${p.nombre};${p.cantidad};${p.ingresos.toFixed(2)};${porcentaje}%\n`;
+    });
+    csv += `TOTAL;;${totalVentas.toFixed(2)};100%\n`;
 
     const BOM = '\uFEFF';
     const csvConBOM = BOM + csv;
@@ -372,6 +385,40 @@ export default function ReportesView() {
                 <td>${((reporteCreditos.porAntiguedad.mas30dias / reporteCreditos.resumen.totalDeuda) * 100).toFixed(1)}%</td>
               </tr>
               ` : ''}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        ${todosProductos.length > 0 ? `
+        <div class="section">
+          <h2>🍽️ Platos Vendidos (${todosProductos.length} productos)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Plato</th>
+                <th style="text-align:center;">Cantidad Vendida</th>
+                <th style="text-align:right;">Ingresos</th>
+                <th style="text-align:right;">% del Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${todosProductos.map((p, i) => `
+              <tr style="${i % 2 === 1 ? 'background:#f9fafb;' : ''}">
+                <td style="color:#6b7280;">${i + 1}</td>
+                <td><strong>${p.nombre}</strong></td>
+                <td style="text-align:center;">${p.cantidad} uds.</td>
+                <td style="text-align:right;">S/ ${p.ingresos.toFixed(2)}</td>
+                <td style="text-align:right;">${totalVentas > 0 ? ((p.ingresos / totalVentas) * 100).toFixed(1) : '0.0'}%</td>
+              </tr>
+              `).join('')}
+              <tr style="background:#ede9fe;font-weight:700;">
+                <td colspan="2">TOTAL</td>
+                <td style="text-align:center;">${todosProductos.reduce((s, p) => s + p.cantidad, 0)} uds.</td>
+                <td style="text-align:right;">S/ ${totalVentas.toFixed(2)}</td>
+                <td style="text-align:right;">100%</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -770,6 +817,59 @@ export default function ReportesView() {
             </div>
           </div>
         </div>
+
+        {/* Tabla de todos los platos vendidos */}
+        {todosProductos.length > 0 && (
+          <div className="reportes-tabla-platos">
+            <h3>
+              <Award size={24} color="#8b5cf6" />
+              Todos los Platos Vendidos
+              <span style={{ fontSize: '0.875rem', fontWeight: '400', color: '#6b7280', marginLeft: '0.5rem' }}>
+                ({todosProductos.length} productos · {todosProductos.reduce((s, p) => s + p.cantidad, 0)} unidades)
+              </span>
+            </h3>
+            <div className="tabla-platos-wrapper">
+              <table className="tabla-platos">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Plato</th>
+                    <th style={{ textAlign: 'center' }}>Cantidad</th>
+                    <th style={{ textAlign: 'right' }}>Ingresos</th>
+                    <th style={{ textAlign: 'right' }}>% del Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todosProductos.map((producto, index) => (
+                    <tr key={index} className={index % 2 === 1 ? 'fila-par' : ''}>
+                      <td className="col-rank">{index + 1}</td>
+                      <td className="col-nombre">{producto.nombre}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span className="badge-cantidad">{producto.cantidad} uds.</span>
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: '600', color: '#10b981' }}>
+                        S/ {producto.ingresos.toFixed(2)}
+                      </td>
+                      <td style={{ textAlign: 'right', color: '#6b7280' }}>
+                        {totalVentas > 0 ? ((producto.ingresos / totalVentas) * 100).toFixed(1) : '0.0'}%
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="fila-total">
+                    <td colSpan="2"><strong>TOTAL</strong></td>
+                    <td style={{ textAlign: 'center' }}>
+                      <strong>{todosProductos.reduce((s, p) => s + p.cantidad, 0)} uds.</strong>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <strong>S/ {totalVentas.toFixed(2)}</strong>
+                    </td>
+                    <td style={{ textAlign: 'right' }}><strong>100%</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Tiempos de Preparación */}
         {pedidosConTiempo.length > 0 && (

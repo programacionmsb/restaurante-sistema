@@ -226,6 +226,103 @@
 }
 
 /* ============================================================================
+   TABLA DE TODOS LOS PLATOS
+   ============================================================================ */
+
+.reportes-tabla-platos {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.reportes-tabla-platos h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.25rem;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tabla-platos-wrapper {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.tabla-platos {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tabla-platos thead tr {
+  background: #f9fafb;
+}
+
+.tabla-platos th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tabla-platos td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.tabla-platos tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla-platos .fila-par {
+  background: #fafafa;
+}
+
+.tabla-platos tr:not(.fila-total):hover {
+  background: #f5f3ff;
+}
+
+.tabla-platos .fila-total {
+  background: #ede9fe;
+  border-top: 2px solid #8b5cf6;
+}
+
+.tabla-platos .fila-total td {
+  font-weight: 700;
+  color: #5b21b6;
+  border-bottom: none;
+}
+
+.col-rank {
+  width: 40px;
+  color: #9ca3af !important;
+  font-size: 0.8rem;
+}
+
+.col-nombre {
+  font-weight: 500;
+}
+
+.badge-cantidad {
+  display: inline-block;
+  background: #ede9fe;
+  color: #7c3aed;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* ============================================================================
    TIEMPOS
    ============================================================================ */
 

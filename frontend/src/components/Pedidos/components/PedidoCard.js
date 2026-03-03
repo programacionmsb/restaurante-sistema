@@ -1,15 +1,15 @@
 import React from 'react';
 import { Calendar, CheckCircle, DollarSign, Edit2, XCircle } from 'lucide-react';
-import { authAPI } from '../../../services/apiAuth';
 import ProtectedAction from '../../ProtectedAction';
 import { formatFechaCompleta, formatHoraSola, calcularTiempoPreparacion, getEstadoLabel, getNombreUsuario } from '../utils/pedidosHelpers';
 
-export const PedidoCard = ({ 
-  pedido, 
-  onUpdateEstado, 
-  onRegistrarPago, 
-  onCancelar, 
-  onEditar 
+export const PedidoCard = ({
+  pedido,
+  onUpdateEstado,
+  onRegistrarPago,
+  onCobrar,
+  onCancelar,
+  onEditar
 }) => {
   return (
     <div className={`pedido-card ${pedido.estado} ${pedido.cancelado ? 'cancelado' : ''}`}>
@@ -186,37 +186,9 @@ export const PedidoCard = ({
 
           {pedido.estado === 'completado' && pedido.estadoPago === 'pendiente' && (
             <ProtectedAction permisos={['caja.cobrar']}>
-              <button 
+              <button
                 className="btn-accion btn-cobrar"
-                onClick={() => {
-                  const tienePermisoCredito = authAPI.hasPermission('creditos.crear');
-                  const opciones = tienePermisoCredito 
-                    ? 'Método de pago:\n1. Efectivo\n2. Yape\n3. Transferencia\n4. Crédito'
-                    : 'Método de pago:\n1. Efectivo\n2. Yape\n3. Transferencia';
-                  
-                  const metodo = prompt(opciones, '1');
-                  const metodos = { 
-                    '1': 'efectivo', 
-                    '2': 'yape', 
-                    '3': 'transferencia',
-                    '4': 'credito'
-                  };
-                  
-                  if (metodos[metodo]) {
-                    if (metodo === '4' && !tienePermisoCredito) {
-                      alert('No tienes permiso para autorizar créditos');
-                      return;
-                    }
-                    
-                    if (metodo === '4') {
-                      if (window.confirm(`¿Marcar pedido de "${pedido.cliente}" como crédito?`)) {
-                        onRegistrarPago(pedido._id, metodos[metodo]);
-                      }
-                    } else {
-                      onRegistrarPago(pedido._id, metodos[metodo]);
-                    }
-                  }
-                }}
+                onClick={() => onCobrar(pedido)}
               >
                 <DollarSign size={16} style={{ display: 'inline', marginRight: '0.25rem' }} />
                 Cobrar

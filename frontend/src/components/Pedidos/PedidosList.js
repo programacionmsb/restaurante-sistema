@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Plus, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Plus, RefreshCw, Search } from 'lucide-react';
 import { pedidosAPI } from '../../services/apiPedidos';
 import { authAPI } from '../../services/apiAuth';
 import PedidoModal from './PedidoModal';
@@ -9,6 +9,7 @@ import { useSocketPedidos } from './hooks/useSocketPedidos';
 import { PedidosEstadisticas } from './components/PedidosEstadisticas';
 import { PedidosFiltros } from './components/PedidosFiltros';
 import { PedidoCard } from './components/PedidoCard';
+import { ModalPago } from '../Caja/components/ModalPago';
 import { calcularEstadisticas, getFechaActual } from './utils/pedidosHelpers';
 import './pedidos.css';
 
@@ -19,6 +20,8 @@ export default function PedidosList() {
   const [filtroFecha, setFiltroFecha] = useState('hoy');
   const [fechaPersonalizada, setFechaPersonalizada] = useState('');
   const [filtroUsuario, setFiltroUsuario] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
+  const [pedidoParaPagar, setPedidoParaPagar] = useState(null);
 
   // Custom hooks
   const { pedidos, loading, cargarPedidosPorFecha } = usePedidos(filtroFecha, fechaPersonalizada);
@@ -39,10 +42,13 @@ export default function PedidosList() {
       const usuario = authAPI.getCurrentUser();
       await pedidosAPI.registrarPago(id, metodoPago, usuario._id);
       cargarPedidosPorFecha();
+      setPedidoParaPagar(null);
     } catch (error) {
       alert(error.message);
     }
   };
+
+  const handleAbrirPago = (pedido) => setPedidoParaPagar(pedido);
 
   const handleCancelarPedido = async (id) => {
     const motivo = prompt('Ingrese el motivo de cancelación:');
@@ -92,6 +98,14 @@ export default function PedidosList() {
 
   // Calcular estadísticas
   const { pedidosFiltrados, ...estadisticas } = calcularEstadisticas(pedidos, filtroEstado, filtroUsuario);
+
+  // Filtrar por búsqueda (cliente o mesa)
+  const pedidosBuscados = busqueda.trim()
+    ? pedidosFiltrados.filter(p =>
+        p.cliente?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        p.mesa?.toLowerCase().includes(busqueda.toLowerCase())
+      )
+    : pedidosFiltrados;
 
   if (loading) {
     return (
@@ -163,7 +177,7 @@ export default function PedidosList() {
           {/* Top Bar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1f2937' }}>
-              Pedidos: {getFechaActual(filtroFecha, fechaPersonalizada)} ({pedidosFiltrados.length})
+              Pedidos: {getFechaActual(filtroFecha, fechaPersonalizada)} ({pedidosBuscados.length})
             </h2>
             
             <ProtectedAction permisos={['pedidos.crear']}>
@@ -242,35 +256,97 @@ export default function PedidosList() {
             </button>
           </div>
 
+          {/* Buscador */}
+          <div style={{ marginBottom: '1.5rem', position: 'relative' }}>
+            <Search
+              size={18}
+              style={{
+                position: 'absolute',
+                left: '0.75rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#9ca3af',
+                pointerEvents: 'none'
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Buscar por cliente o mesa..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.75rem 0.625rem 2.5rem',
+                border: '2px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                fontSize: '0.9rem',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#f59e0b'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+            />
+            {busqueda && (
+              <button
+                onClick={() => setBusqueda('')}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#9ca3af',
+                  fontSize: '1.1rem',
+                  lineHeight: 1
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           {/* Grid de Pedidos */}
           <div className="pedidos-grid">
-            {pedidosFiltrados.map((pedido) => (
+            {pedidosBuscados.map((pedido) => (
               <PedidoCard
                 key={pedido._id}
                 pedido={pedido}
                 onUpdateEstado={handleUpdateEstado}
                 onRegistrarPago={handleRegistrarPago}
+                onCobrar={handleAbrirPago}
                 onCancelar={handleCancelarPedido}
                 onEditar={handleEditarPedido}
               />
             ))}
           </div>
 
-          {pedidosFiltrados.length === 0 && (
+          {pedidosBuscados.length === 0 && (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
-              No hay pedidos con este filtro
+              {busqueda ? `Sin resultados para "${busqueda}"` : 'No hay pedidos con este filtro'}
             </div>
           )}
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Modal de pedido */}
       {modalOpen && (
         <PedidoModal
           isOpen={modalOpen}
           onClose={handleCloseModal}
           onSave={cargarPedidosPorFecha}
           pedidoEditar={editingPedido}
+        />
+      )}
+
+      {/* Modal de pago */}
+      {pedidoParaPagar && (
+        <ModalPago
+          pedido={pedidoParaPagar}
+          onClose={() => setPedidoParaPagar(null)}
+          onPagar={(metodoPago) => handleRegistrarPago(pedidoParaPagar._id, metodoPago)}
         />
       )}
 
