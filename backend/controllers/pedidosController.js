@@ -82,6 +82,18 @@ exports.getPedidosHoy = async (req, res) => {
   }
 };
 
+exports.getPedidosPendientes = async (req, res) => {
+  try {
+    const pedidos = await Pedido.find({
+      estado: { $in: ['pendiente', 'en_preparacion'] },
+      cancelado: { $ne: true }
+    }).sort({ createdAt: 1 }); // más antiguos primero
+    res.json(pedidos);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getPedidosPorRango = async (req, res) => {
   try {
     const { fechaInicio, fechaFin, usuarioId } = req.query;

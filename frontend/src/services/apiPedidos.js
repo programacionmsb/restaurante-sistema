@@ -23,6 +23,13 @@ export const pedidosAPI = {
     return await response.json();
   },
 
+  // Obtener todos los pedidos pendientes o en preparación (sin filtro de fecha, para cocina)
+  getPendientes: async () => {
+    const response = await fetch(`${API_URL}/pedidos/pendientes`);
+    if (!response.ok) throw new Error('Error al cargar pedidos pendientes');
+    return await response.json();
+  },
+
   // Obtener pedidos por rango de fechas (con filtro de usuario)
   getPorRango: async (fechaInicio, fechaFin) => {
     // Obtener usuario actual

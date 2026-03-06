@@ -8,11 +8,8 @@ export const useCocina = () => {
 
   const cargarPedidos = async () => {
     try {
-      const data = await pedidosAPI.getHoy();
-      const pedidosCocina = data.filter(
-        p => p.estado === 'pendiente' || p.estado === 'en_preparacion'
-      );
-      setPedidos(pedidosCocina);
+      const data = await pedidosAPI.getPendientes();
+      setPedidos(data);
     } catch (error) {
       console.error('Error:', error);
     } finally {

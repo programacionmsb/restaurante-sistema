@@ -3,6 +3,7 @@ const router = express.Router();
 const pedidosController = require('../controllers/pedidosController');
 
 router.get('/hoy', pedidosController.getPedidosHoy);
+router.get('/pendientes', pedidosController.getPedidosPendientes);
 router.get('/rango', pedidosController.getPedidosPorRango);
 router.post('/', pedidosController.crearPedido);
 router.put('/:id', pedidosController.actualizarPedido);
