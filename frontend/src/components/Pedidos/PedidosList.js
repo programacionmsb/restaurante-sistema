@@ -15,6 +15,7 @@ import './pedidos.css';
 
 export default function PedidosList() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalConFecha, setModalConFecha] = useState(false);
   const [editingPedido, setEditingPedido] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroFecha, setFiltroFecha] = useState('hoy');
@@ -86,6 +87,7 @@ export default function PedidosList() {
 
   const handleCloseModal = () => {
     setModalOpen(false);
+    setModalConFecha(false);
     setEditingPedido(null);
   };
 
@@ -179,31 +181,59 @@ export default function PedidosList() {
             <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1f2937' }}>
               Pedidos: {getFechaActual(filtroFecha, fechaPersonalizada)} ({pedidosBuscados.length})
             </h2>
-            
-            <ProtectedAction permisos={['pedidos.crear']}>
-              <button
-                onClick={() => setModalOpen(true)}
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <Plus size={20} />
-                Nuevo Pedido
-              </button>
-            </ProtectedAction>
+
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {authAPI.getCurrentUser()?.rol?.nombre === 'Administrador' && (
+                <button
+                  onClick={() => { setModalConFecha(true); setModalOpen(true); }}
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  title="Registrar un pedido de una fecha anterior"
+                >
+                  <Plus size={20} />
+                  Registrar Pendiente
+                </button>
+              )}
+
+              <ProtectedAction permisos={['pedidos.crear']}>
+                <button
+                  onClick={() => { setModalConFecha(false); setModalOpen(true); }}
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <Plus size={20} />
+                  Nuevo Pedido
+                </button>
+              </ProtectedAction>
+            </div>
           </div>
 
           {/* Filtros */}
@@ -338,6 +368,7 @@ export default function PedidosList() {
           onClose={handleCloseModal}
           onSave={cargarPedidosPorFecha}
           pedidoEditar={editingPedido}
+          conFechaManual={modalConFecha}
         />
       )}
 

@@ -8,7 +8,17 @@ import './pedidos.css';
 
 const CATEGORIAS_VISIBLES = ['Entrada', 'Plato Principal'];
 
-export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = null }) {
+const getHoyStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+
+const getHoraStr = () => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+};
+
+export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = null, conFechaManual = false }) {
   const [clientes, setClientes] = useState([]);
   const [menusDelDia, setMenusDelDia] = useState([]);
   const [platos, setPlatos] = useState({ menu: [], otros: [], entrada: [], plato: [], bebida: [], postre: [] });
@@ -23,6 +33,8 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
   const [busquedaPlato, setBusquedaPlato] = useState('');
   const [busquedaCliente, setBusquedaCliente] = useState('');
   const [preciosMenuSeleccionado, setPreciosMenuSeleccionado] = useState({}); // menuId -> precio seleccionado
+  const [fechaManual, setFechaManual] = useState(getHoyStr);
+  const [horaManual, setHoraManual] = useState(getHoraStr);
 
   useEffect(() => { cargarDatos(); }, []);
 
@@ -257,8 +269,9 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
     const pedidoData = {
       cliente: formData.cliente, mesa: mesaFormateada, items: itemsConPrecio,
       total: calcularTotal(), totalDescuentos: calcularDescuentoTotal(),
-      hora: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
-      usuarioCreador
+      hora: conFechaManual ? horaManual : new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
+      usuarioCreador,
+      ...(conFechaManual && { createdAt: new Date(`${fechaManual}T${horaManual}:00`) })
     };
 
     try {
@@ -297,13 +310,43 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
         <div className="modal-content" style={{ maxWidth: '1200px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#1f2937' }}>{esEdicion ? 'Editar Pedido' : 'Nuevo Pedido'}</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', color: '#1f2937' }}>
+              {esEdicion ? 'Editar Pedido' : conFechaManual ? '📅 Registrar Pedido Pendiente' : 'Nuevo Pedido'}
+            </h3>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: '#6b7280' }}><X size={24} /></button>
           </div>
 
           {esEdicion && (
             <div style={{ background: '#dbeafe', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', color: '#1e40af', fontWeight: '600' }}>
               ℹ️ Editando pedido pendiente - Solo se pueden editar pedidos que aún no han iniciado preparación
+            </div>
+          )}
+
+          {conFechaManual && (
+            <div style={{ background: '#ede9fe', border: '2px solid #6366f1', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
+              <div style={{ fontWeight: '700', color: '#4338ca', marginBottom: '0.75rem', fontSize: '0.95rem' }}>
+                📅 Registro histórico — ingresa la fecha y hora real del pedido
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#4338ca', marginBottom: '0.25rem' }}>Fecha</label>
+                  <input
+                    type="date"
+                    value={fechaManual}
+                    onChange={(e) => setFechaManual(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '2px solid #a5b4fc', borderRadius: '0.375rem', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#4338ca', marginBottom: '0.25rem' }}>Hora</label>
+                  <input
+                    type="time"
+                    value={horaManual}
+                    onChange={(e) => setHoraManual(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '2px solid #a5b4fc', borderRadius: '0.375rem', fontSize: '0.9rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
