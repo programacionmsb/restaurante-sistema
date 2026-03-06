@@ -72,19 +72,8 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
         platosAPI.getByTipo('postre'), menuAPI.getHoy()
       ]);
 
-      console.log('[DEBUG PedidoModal] menusDelDiaData recibidos:', menusDelDiaData.length);
-      menusDelDiaData.forEach((m, i) => {
-        console.log(`  [${i+1}] id:${m._id} | activo:${m.activo} | nombre:"${m.nombre}"`);
-        m.categorias?.forEach(cat => {
-          console.log(`       cat:"${cat.nombre}" - platos:`, cat.platos?.map(p => `${p.nombre}(platoId:${p.platoId ? (p.platoId._id || p.platoId) : 'NULL'})`).join(', '));
-        });
-      });
-
-      const menusActivos = menusDelDiaData.filter(m => m.activo);
-      console.log('[DEBUG PedidoModal] Después del filter(activo):', menusActivos.length);
-
       setClientes(clientesData);
-      setMenusDelDia(menusActivos);
+      setMenusDelDia(menusDelDiaData.filter(m => m.activo));
       setPlatos({
         menu: menusData.filter(p => p.disponible), otros: otrosData.filter(p => p.disponible),
         entrada: entradasData.filter(p => p.disponible), plato: platosData.filter(p => p.disponible),
@@ -389,11 +378,9 @@ export default function PedidoModal({ isOpen, onClose, onSave, pedidoEditar = nu
                         <CalendarIcon size={16} /> Menú del Día
                       </h4>
                       {menusFiltrados.map(menu => {
-                        console.log('[DEBUG render] Pintando menú:', menu._id, menu.nombre, '| precios:', menu.precios, '| precioCompleto:', menu.precioCompleto);
                         const cantidadMenu = getCantidadMenu(menu._id);
                         const preciosMenu = menu.precios && menu.precios.length > 0 ? menu.precios : (menu.precioCompleto > 0 ? [{ nombre: 'General', precio: menu.precioCompleto }] : []);
                         const precioSeleccionado = preciosMenuSeleccionado[menu._id] || (preciosMenu.length > 0 ? preciosMenu[0].precio : 0);
-                        console.log('[DEBUG render] preciosMenu calculado:', preciosMenu, '| precioSeleccionado:', precioSeleccionado);
 
                         return (
                           <div key={menu._id} className="plato-item" style={{ background: 'white', padding: '1rem', borderRadius: '0.5rem', marginBottom: '0.75rem', border: '1px solid #fbcfe8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
