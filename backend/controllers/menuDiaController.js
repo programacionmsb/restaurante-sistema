@@ -15,13 +15,40 @@ exports.getHoy = async (req, res) => {
     const fin = new Date(inicio);
     fin.setUTCDate(fin.getUTCDate() + 1);
 
+    console.log('[DEBUG getHoy] Fecha Perú:', hoyStr);
+    console.log('[DEBUG getHoy] Rango búsqueda:', inicio.toISOString(), '->', fin.toISOString());
+
+    // Primero: sin populate para ver cuántos documentos hay
+    const menusSinPopulate = await MenuDia.find({
+      fecha: { $gte: inicio, $lt: fin },
+      activo: true
+    }).select('_id nombre fecha activo').sort({ nombre: 1 });
+
+    console.log('[DEBUG getHoy] Documentos encontrados sin populate:', menusSinPopulate.length);
+    menusSinPopulate.forEach((m, i) => {
+      console.log(`  [${i+1}] ${m._id} | activo:${m.activo} | fecha:${m.fecha.toISOString()} | "${m.nombre}"`);
+    });
+
+    // Ahora con populate
     const menus = await MenuDia.find({
       fecha: { $gte: inicio, $lt: fin },
       activo: true
     }).populate('categorias.platos.platoId').sort({ nombre: 1 });
 
+    console.log('[DEBUG getHoy] Documentos después del populate:', menus.length);
+    menus.forEach((m, i) => {
+      const platoIds = m.categorias.flatMap(cat =>
+        cat.platos.map(p => ({
+          nombre: p.nombre,
+          platoId: p.platoId ? p.platoId._id || p.platoId : 'NULL (eliminado)'
+        }))
+      );
+      console.log(`  [${i+1}] "${m.nombre}" - platos:`, JSON.stringify(platoIds));
+    });
+
     res.json(menus);
   } catch (error) {
+    console.error('[DEBUG getHoy] ERROR:', error.message, error.stack);
     res.status(500).json({ error: error.message });
   }
 };
