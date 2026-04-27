@@ -37,13 +37,13 @@ const validarEmail = (email) => {
 
 export const obtenerEstadisticasClientes = (clientes) => {
   const totalClientes = clientes.length;
-  const clientesConEmail = clientes.filter(c => c.email && c.email.trim() !== '').length;
-  const clientesSinEmail = totalClientes - clientesConEmail;
+  const clientesConTelefono = clientes.filter(c => c.telefono && /^\d{9}$/.test(c.telefono.trim())).length;
+  const clientesSinEmail = clientes.filter(c => !c.email || !validarEmail(c.email.trim())).length;
 
   return {
     totalClientes,
-    clientesConEmail,
+    clientesConTelefono,
     clientesSinEmail,
-    porcentajeConEmail: totalClientes > 0 ? (clientesConEmail / totalClientes * 100).toFixed(1) : 0
+    porcentajeConTelefono: totalClientes > 0 ? (clientesConTelefono / totalClientes * 100).toFixed(1) : 0
   };
 };

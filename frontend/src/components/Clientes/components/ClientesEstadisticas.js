@@ -35,16 +35,16 @@ export const ClientesEstadisticas = ({ stats }) => {
         border: '2px solid #10b981'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <Mail size={20} color="#10b981" />
+          <Phone size={20} color="#10b981" />
           <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '600' }}>
-            Con Email
+            Con Teléfono
           </span>
         </div>
         <div style={{ fontSize: '2rem', fontWeight: '700', color: '#10b981' }}>
-          {stats.clientesConEmail}
+          {stats.clientesConTelefono}
         </div>
         <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.25rem' }}>
-          {stats.porcentajeConEmail}% del total
+          {stats.porcentajeConTelefono}% del total
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export const ClientesEstadisticas = ({ stats }) => {
         border: '2px solid #f59e0b'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-          <Phone size={20} color="#f59e0b" />
+          <Mail size={20} color="#f59e0b" />
           <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '600' }}>
             Sin Email
           </span>
