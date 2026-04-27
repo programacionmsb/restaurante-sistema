@@ -58,11 +58,11 @@ export const ClientesEstadisticas = ({ stats }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
           <Mail size={20} color="#f59e0b" />
           <span style={{ fontSize: '0.875rem', color: '#6b7280', fontWeight: '600' }}>
-            Sin Email
+            Con Email
           </span>
         </div>
         <div style={{ fontSize: '2rem', fontWeight: '700', color: '#f59e0b' }}>
-          {stats.clientesSinEmail}
+          {stats.clientesConEmail}
         </div>
       </div>
     </div>
